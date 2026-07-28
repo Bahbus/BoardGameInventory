@@ -1,0 +1,8 @@
+node_modules
+dist
+coverage
+playwright-report
+test-results
+public/catalog.json
+lighthouse-report.json
+package-lock.json

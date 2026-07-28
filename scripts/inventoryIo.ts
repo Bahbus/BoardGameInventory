@@ -1,0 +1,34 @@
+import { readFile, writeFile } from "node:fs/promises";
+import YAML from "yaml";
+import { parseInventory } from "../src/lib/schema";
+import type { Inventory } from "../src/types";
+
+export const INVENTORY_PATH = new URL("../data/inventory.yaml", import.meta.url);
+
+export async function readInventory(path = INVENTORY_PATH): Promise<Inventory> {
+  const source = await readFile(path, "utf8");
+  return parseInventory(YAML.parse(source));
+}
+
+export async function writeInventory(inventory: Inventory, path = INVENTORY_PATH) {
+  const validated = parseInventory(inventory);
+  const source = YAML.stringify(validated, {
+    lineWidth: 0,
+    sortMapEntries: false
+  });
+  await writeFile(path, source, "utf8");
+}
+
+export function formatZodError(error: unknown): string {
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "issues" in error &&
+    Array.isArray(error.issues)
+  ) {
+    return error.issues
+      .map((issue) => `${issue.path?.join(".") || "inventory"}: ${issue.message}`)
+      .join("\n");
+  }
+  return error instanceof Error ? error.message : String(error);
+}

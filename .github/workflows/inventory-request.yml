@@ -1,0 +1,132 @@
+name: Inventory request
+
+on:
+  issues:
+    types: [opened, labeled]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: inventory-request-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  mark-suggestion:
+    name: mark public suggestion
+    if: >-
+      github.event.action == 'opened' &&
+      contains(join(github.event.issue.labels.*.name, ','), 'inventory:') &&
+      !contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.issue.author_association)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Mark request for maintainer review
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE: ${{ github.event.issue.number }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          gh issue edit "$ISSUE" --repo "$REPOSITORY" --add-label "suggestion"
+          gh issue comment "$ISSUE" --repo "$REPOSITORY" --body "Thanks for the suggestion. A maintainer can approve it by adding the \`approved-inventory-change\` label. No inventory automation has run."
+
+  prepare-pull-request:
+    name: prepare pull request
+    if: >-
+      contains(join(github.event.issue.labels.*.name, ','), 'inventory:') &&
+      (
+        contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.issue.author_association) ||
+        (
+          github.event.action == 'labeled' &&
+          github.event.label.name == 'approved-inventory-change'
+        )
+      )
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      actions: write
+    steps:
+      - name: Check out main
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: main
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Identify request
+        id: request
+        env:
+          EVENT_PATH: ${{ github.event_path }}
+        run: |
+          labels="$(jq -r '[.issue.labels[].name] | join(",")' "$EVENT_PATH")"
+          if [[ "$labels" == *"inventory:add"* ]]; then operation=add
+          elif [[ "$labels" == *"inventory:update"* ]]; then operation=update
+          elif [[ "$labels" == *"inventory:remove"* ]]; then operation=remove
+          else echo "No inventory operation label found." >&2; exit 1
+          fi
+          echo "operation=$operation" >> "$GITHUB_OUTPUT"
+      - name: Reject an existing automation branch
+        env:
+          BRANCH: inventory/issue-${{ github.event.issue.number }}
+        run: |
+          if git ls-remote --exit-code origin "refs/heads/$BRANCH"; then
+            echo "An automation branch already exists for this issue." >&2
+            exit 1
+          fi
+      - name: Apply one inventory transaction
+        run: npm run request:apply
+        env:
+          REQUEST_OPERATION: ${{ steps.request.outputs.operation }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+      - name: Validate inventory and BGG identity
+        run: npm run inventory:validate && npm run catalog:build
+        env:
+          BGG_API_TOKEN: ${{ secrets.BGG_API_TOKEN }}
+          REQUIRE_BGG_ENRICHMENT: "1"
+      - name: Commit transaction
+        env:
+          BRANCH: inventory/issue-${{ github.event.issue.number }}
+          OPERATION: ${{ steps.request.outputs.operation }}
+          ISSUE: ${{ github.event.issue.number }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$BRANCH"
+          git add data/inventory.yaml
+          git diff --cached --exit-code && { echo "Request produced no inventory change." >&2; exit 1; }
+          git commit -m "$OPERATION inventory item from issue #$ISSUE"
+          git push --set-upstream origin "$BRANCH"
+      - name: Open pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: inventory/issue-${{ github.event.issue.number }}
+          OPERATION: ${{ steps.request.outputs.operation }}
+          ISSUE: ${{ github.event.issue.number }}
+          REPOSITORY: ${{ github.repository }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+        run: |
+          gh pr create --repo "$REPOSITORY" --base main --head "$BRANCH" \
+            --title "Inventory $OPERATION: $ISSUE_TITLE" \
+            --body "Closes #$ISSUE
+
+          This pull request was prepared from the structured inventory request. It has not been approved or merged automatically."
+          gh workflow run validate.yml --repo "$REPOSITORY" --ref "$BRANCH"
+          gh issue comment "$ISSUE" --repo "$REPOSITORY" --body "A validated inventory pull request has been prepared for maintainer review."
+      - name: Explain an automation failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE: ${{ github.event.issue.number }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          gh issue edit "$ISSUE" --repo "$REPOSITORY" --add-label "needs-info"
+          gh issue comment "$ISSUE" --repo "$REPOSITORY" --body "The request could not be converted into an inventory pull request. Review the failed workflow for the exact validation error, correct the issue fields, then remove and reapply the approval label."

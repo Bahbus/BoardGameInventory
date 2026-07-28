@@ -1,0 +1,49 @@
+{
+  "name": "board-game-inventory",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "catalog:build": "node --import tsx scripts/generateCatalog.ts",
+    "dev": "npm run catalog:build && vite",
+    "build": "npm run catalog:build && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint . --max-warnings=0",
+    "format:check": "prettier --check .",
+    "format": "prettier --write .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "lighthouse": "node scripts/runLighthouse.mjs",
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm test && npm run build",
+    "inventory:validate": "node --import tsx scripts/validateInventory.ts",
+    "inventory:import": "node --import tsx scripts/importCsv.ts",
+    "request:apply": "node --import tsx scripts/applyIssueRequest.ts"
+  },
+  "dependencies": {
+    "fast-xml-parser": "^5.3.1",
+    "preact": "^10.27.2",
+    "yaml": "^2.8.1",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.11.0",
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.56.1",
+    "@preact/preset-vite": "^2.10.2",
+    "@testing-library/preact": "^3.2.4",
+    "@types/node": "^24.10.1",
+    "@typescript-eslint/eslint-plugin": "^8.65.0",
+    "@typescript-eslint/parser": "^8.65.0",
+    "eslint": "^10.8.0",
+    "eslint-config-prettier": "^10.1.8",
+    "jsdom": "^27.2.0",
+    "lighthouse": "^13.4.1",
+    "prettier": "^3.6.2",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3",
+    "vite": "^7.2.4",
+    "vitest": "^4.0.13"
+  }
+}

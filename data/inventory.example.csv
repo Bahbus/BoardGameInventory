@@ -1,0 +1,3 @@
+kind,slug,bgg_id,name,parent_bgg_id,standalone,edition,quantity,shelf,availability,learned,house_rating,setup_minutes,teach_difficulty,table_space,interaction,luck,downtime,modes,moods,accessibility_flags,content_flags,recommendation_notes,override_min_players,override_max_players,override_min_minutes,override_max_minutes,override_min_age
+game,example-game,1,Example Game,,,First edition,1,Game Shelf A,available,true,4,10,2,standard,3,2,2,competitive;team,strategic;social,color-dependent,,A dependable group favorite,,,,,
+expansion,example-expansion,2,Example Expansion,1,false,,1,Game Shelf A,available,true,,,,,,,,,,,,,,,,,

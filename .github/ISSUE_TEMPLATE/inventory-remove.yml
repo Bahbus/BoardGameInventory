@@ -1,0 +1,22 @@
+name: Remove an inventory item
+description: Request removal of a game or expansion from the public inventory.
+title: "[Inventory remove]: "
+labels: ["inventory:remove"]
+body:
+  - type: input
+    id: bgg-id
+    attributes:
+      label: BGG ID
+    validations:
+      required: true
+  - type: input
+    id: game-name
+    attributes:
+      label: Game name
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: Confirm removal
+      options:
+        - label: I confirm that this item should be removed from the public inventory.
+          required: true

@@ -1,0 +1,94 @@
+name: Add an inventory item
+description: Request a base game or expansion be added to the public inventory.
+title: "[Inventory add]: "
+labels: ["inventory:add"]
+body:
+  - type: markdown
+    attributes:
+      value: All submitted fields are public. Use shelf labels, never addresses or private information.
+  - type: input
+    id: bgg-id
+    attributes:
+      label: BGG ID
+      description: The numeric ID from the BoardGameGeek URL.
+      placeholder: "68448"
+    validations:
+      required: true
+  - type: input
+    id: game-name
+    attributes:
+      label: Game name
+    validations:
+      required: true
+  - type: input
+    id: slug
+    attributes:
+      label: Stable slug
+      description: Lowercase letters, numbers, and hyphens only.
+      placeholder: 7-wonders
+    validations:
+      required: true
+  - type: input
+    id: parent-bgg-id
+    attributes:
+      label: Parent BGG ID
+      description: Leave empty for a base game. Expansions require their owned base game's BGG ID.
+  - type: dropdown
+    id: standalone
+    attributes:
+      label: Standalone
+      description: Can this expansion be played without the base game?
+      options: ["No", "Yes"]
+      default: 0
+  - type: input
+    id: edition
+    attributes:
+      label: Edition
+  - type: input
+    id: quantity
+    attributes:
+      label: Quantity
+      value: "1"
+    validations:
+      required: true
+  - type: input
+    id: shelf
+    attributes:
+      label: Shelf label
+      placeholder: Game Shelf A3
+  - type: dropdown
+    id: availability
+    attributes:
+      label: Availability
+      options: [available, loaned, incomplete, unavailable]
+      default: 0
+    validations:
+      required: true
+  - type: dropdown
+    id: learned
+    attributes:
+      label: Learned
+      options: ["No", "Yes"]
+      default: 0
+  - type: input
+    id: house-rating
+    attributes:
+      label: House rating
+      description: Optional rating from 1 to 5.
+  - type: input
+    id: setup-minutes
+    attributes:
+      label: Setup minutes
+  - type: input
+    id: teach-difficulty
+    attributes:
+      label: Teach difficulty
+      description: Optional difficulty from 1 to 5.
+  - type: textarea
+    id: notes
+    attributes:
+      label: Ownership notes
+  - type: textarea
+    id: recommendation-notes
+    attributes:
+      label: Recommendation notes

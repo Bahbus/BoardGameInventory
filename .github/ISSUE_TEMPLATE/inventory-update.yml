@@ -1,0 +1,55 @@
+name: Update an inventory item
+description: Request changes to a game or expansion already in the inventory.
+title: "[Inventory update]: "
+labels: ["inventory:update"]
+body:
+  - type: input
+    id: bgg-id
+    attributes:
+      label: BGG ID
+    validations:
+      required: true
+  - type: input
+    id: game-name
+    attributes:
+      label: Game name
+      description: Leave empty to keep the current name.
+  - type: input
+    id: shelf
+    attributes:
+      label: Shelf label
+      description: Leave empty to keep it; enter (clear) to remove it.
+  - type: dropdown
+    id: availability
+    attributes:
+      label: Availability
+      options: [available, loaned, incomplete, unavailable]
+  - type: dropdown
+    id: learned
+    attributes:
+      label: Learned
+      options: ["No", "Yes"]
+  - type: input
+    id: house-rating
+    attributes:
+      label: House rating
+      description: Optional rating from 1 to 5.
+  - type: input
+    id: setup-minutes
+    attributes:
+      label: Setup minutes
+  - type: input
+    id: teach-difficulty
+    attributes:
+      label: Teach difficulty
+      description: Optional difficulty from 1 to 5.
+  - type: textarea
+    id: notes
+    attributes:
+      label: Ownership notes
+      description: Leave empty to keep it; enter (clear) to remove it.
+  - type: textarea
+    id: recommendation-notes
+    attributes:
+      label: Recommendation notes
+      description: Leave empty to keep it; enter (clear) to remove it.
