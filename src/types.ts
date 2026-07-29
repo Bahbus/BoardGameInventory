@@ -28,7 +28,8 @@ export interface HouseEvaluation {
 
 export interface OwnedExpansion {
   slug: string;
-  bggId: number;
+  bggId?: number;
+  sourceUrl?: string;
   name: string;
   standalone: boolean;
   edition?: string;
@@ -43,7 +44,8 @@ export interface OwnedExpansion {
 
 export interface InventoryGame {
   slug: string;
-  bggId: number;
+  bggId?: number;
+  sourceUrl?: string;
   name: string;
   edition?: string;
   quantity: number;
@@ -87,12 +89,17 @@ export interface BggMetadata {
   url: string;
 }
 
+export interface CatalogMetadata extends Omit<BggMetadata, "bggId" | "url"> {
+  bggId?: number;
+  url?: string;
+}
+
 export interface CatalogExpansion extends OwnedExpansion {
-  metadata?: BggMetadata;
+  metadata?: CatalogMetadata;
 }
 
 export interface CatalogGame extends Omit<InventoryGame, "expansions"> {
-  metadata: BggMetadata;
+  metadata: CatalogMetadata;
   expansions: CatalogExpansion[];
   playMode?: {
     kind: "base" | "standalone-expansion";

@@ -36,4 +36,54 @@ describe("inventory schema", () => {
       })
     ).toThrow(/minPlayers/);
   });
+
+  it("accepts a local-only game with a source and complete filter values", () => {
+    const local = {
+      ...game("local-game", 10),
+      bggId: undefined,
+      sourceUrl: "https://publisher.example/local-game",
+      overrides: {
+        minPlayers: 2,
+        maxPlayers: 8,
+        minMinutes: 15,
+        maxMinutes: 30,
+        minAge: 18
+      }
+    };
+    expect(parseInventory({ version: 1, games: [local] }).games[0].bggId).toBeUndefined();
+  });
+
+  it("rejects a local-only game without complete filter values", () => {
+    expect(() =>
+      parseInventory({
+        version: 1,
+        games: [
+          {
+            ...game("local-game", 10),
+            bggId: undefined,
+            sourceUrl: "https://publisher.example/local-game",
+            overrides: { minPlayers: 2 }
+          }
+        ]
+      })
+    ).toThrow(/maxPlayers/);
+  });
+
+  it("allows multiple local-only games while still enforcing unique slugs", () => {
+    const local = (slug: string) => ({
+      ...game(slug, 10),
+      bggId: undefined,
+      sourceUrl: `https://publisher.example/${slug}`,
+      overrides: {
+        minPlayers: 1,
+        maxPlayers: 4,
+        minMinutes: 10,
+        maxMinutes: 20,
+        minAge: 8
+      }
+    });
+    expect(parseInventory({ version: 1, games: [local("one"), local("two")] }).games).toHaveLength(
+      2
+    );
+  });
 });

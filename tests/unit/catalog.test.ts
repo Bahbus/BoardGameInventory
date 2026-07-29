@@ -36,6 +36,35 @@ describe("catalog filtering and scoring", () => {
     expect(neutral.rouletteWeight).toBe(2);
   });
 
+  it("filters a local-only game through authored player and time values", () => {
+    const local = {
+      ...racers,
+      slug: "local-party-game",
+      bggId: undefined,
+      sourceUrl: "https://publisher.example/local-party-game",
+      overrides: {
+        minPlayers: 3,
+        maxPlayers: 12,
+        minMinutes: 20,
+        maxMinutes: 40,
+        minAge: 18
+      },
+      metadata: {
+        ...racers.metadata,
+        bggId: undefined,
+        url: "https://publisher.example/local-party-game",
+        minPlayers: undefined,
+        maxPlayers: undefined,
+        minMinutes: undefined,
+        maxMinutes: undefined,
+        minAge: undefined
+      }
+    };
+    expect(isEligible(local, { ...DEFAULT_PREFERENCES, players: 8, maxMinutes: 45 })).toBe(true);
+    expect(isEligible(local, { ...DEFAULT_PREFERENCES, players: 2 })).toBe(false);
+    expect(isEligible(local, { ...DEFAULT_PREFERENCES, maxMinutes: 30 })).toBe(false);
+  });
+
   it("uses the documented exact weight for a perfect match", () => {
     const result = scoreGame(forest, {
       ...DEFAULT_PREFERENCES,

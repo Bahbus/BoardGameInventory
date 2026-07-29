@@ -312,7 +312,9 @@ export function createStandalonePlayModes(games: CatalogGame[]): CatalogGame[] {
           ...game.metadata,
           bggId: expansion.bggId,
           name: expansion.name,
-          url: `https://boardgamegeek.com/boardgame/${expansion.bggId}`
+          url: expansion.bggId
+            ? `https://boardgamegeek.com/boardgame/${expansion.bggId}`
+            : expansion.sourceUrl
         },
         playMode: {
           kind: "standalone-expansion" as const,
