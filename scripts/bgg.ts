@@ -149,7 +149,8 @@ const delay = (milliseconds: number) => new Promise((resolve) => setTimeout(reso
 export async function fetchBggMetadata(
   ids: number[],
   token: string,
-  fetcher: typeof fetch = fetch
+  fetcher: typeof fetch = fetch,
+  wait: (milliseconds: number) => Promise<unknown> = delay
 ): Promise<Map<number, BggMetadata>> {
   const result = new Map<number, BggMetadata>();
   for (let offset = 0; offset < ids.length; offset += 20) {
@@ -167,7 +168,7 @@ export async function fetchBggMetadata(
       if (![202, 429, 500, 502, 503, 504].includes(response.status)) {
         throw new Error(`BGG returned ${response.status} for IDs ${batch.join(", ")}`);
       }
-      await delay(500 * 2 ** attempt);
+      await wait(500 * 2 ** attempt);
     }
     if (!response?.ok || response.status === 202) {
       throw new Error(`BGG enrichment failed after retries for IDs ${batch.join(", ")}`);

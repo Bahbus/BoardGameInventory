@@ -56,7 +56,7 @@ describe("BGG enrichment", () => {
       calls += 1;
       return new Response(calls === 1 ? "" : xml, { status: calls === 1 ? 202 : 200 });
     };
-    const result = await fetchBggMetadata([101], "token", fetcher as typeof fetch);
+    const result = await fetchBggMetadata([101], "token", fetcher as typeof fetch, async () => {});
     expect(calls).toBe(2);
     expect(result.get(101)?.name).toBe("Forest Council");
   });
@@ -66,5 +66,83 @@ describe("BGG enrichment", () => {
     await expect(fetchBggMetadata([999], "token", fetcher as typeof fetch)).rejects.toThrow(
       /did not return/
     );
+  });
+
+  it.each([429, 500, 502, 503, 504])(
+    "retries a transient %s response with bounded backoff",
+    async (status) => {
+      let calls = 0;
+      const waits: number[] = [];
+      const fetcher = async () => {
+        calls += 1;
+        return new Response(calls === 1 ? "" : xml, {
+          status: calls === 1 ? status : 200
+        });
+      };
+
+      const result = await fetchBggMetadata(
+        [101],
+        "token",
+        fetcher as typeof fetch,
+        async (milliseconds) => {
+          waits.push(milliseconds);
+        }
+      );
+
+      expect(result.get(101)?.name).toBe("Forest Council");
+      expect(calls).toBe(2);
+      expect(waits).toEqual([500]);
+    }
+  );
+
+  it("stops after five retryable failures", async () => {
+    let calls = 0;
+    const waits: number[] = [];
+    const fetcher = async () => {
+      calls += 1;
+      return new Response("", { status: 503 });
+    };
+
+    await expect(
+      fetchBggMetadata([101], "token", fetcher as typeof fetch, async (milliseconds) => {
+        waits.push(milliseconds);
+      })
+    ).rejects.toThrow(/failed after retries/);
+    expect(calls).toBe(5);
+    expect(waits).toEqual([500, 1000, 2000, 4000, 8000]);
+  });
+
+  it("does not retry permanent API failures", async () => {
+    let calls = 0;
+    const fetcher = async () => {
+      calls += 1;
+      return new Response("", { status: 401 });
+    };
+
+    await expect(
+      fetchBggMetadata([101], "token", fetcher as typeof fetch, async () => {})
+    ).rejects.toThrow(/returned 401/);
+    expect(calls).toBe(1);
+  });
+
+  it("requests at most 20 IDs per BGG batch", async () => {
+    const ids = Array.from({ length: 21 }, (_, index) => index + 1);
+    const requestedBatches: number[][] = [];
+    const fetcher = async (input: Parameters<typeof fetch>[0]) => {
+      const url = new URL(String(input));
+      const batch = url.searchParams.get("id")!.split(",").map(Number);
+      requestedBatches.push(batch);
+      const items = batch
+        .map(
+          (id) =>
+            `<item type="boardgame" id="${id}"><name type="primary" value="Game ${id}"/></item>`
+        )
+        .join("");
+      return new Response(`<items>${items}</items>`, { status: 200 });
+    };
+
+    const result = await fetchBggMetadata(ids, "token", fetcher as typeof fetch, async () => {});
+    expect(requestedBatches.map((batch) => batch.length)).toEqual([20, 1]);
+    expect(result.size).toBe(21);
   });
 });
