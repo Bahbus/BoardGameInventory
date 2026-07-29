@@ -40,6 +40,11 @@ npm run inventory:validate
 
 ## Import the initial collection
 
+The resolved, pre-match ownership list lives in `data/inventory.intake.csv`. It is a UTF-8,
+plain-text review artifact containing the submitted wording, normalized title, ownership detail,
+parent relationship, notes, and source links. It intentionally remains separate from the
+canonical import format until BGG IDs have been matched and verified.
+
 Copy `data/inventory.example.csv`, replace the sample rows, then run:
 
 ```sh

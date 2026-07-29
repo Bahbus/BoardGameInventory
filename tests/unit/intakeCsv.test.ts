@@ -1,0 +1,59 @@
+import { readFile } from "node:fs/promises";
+import { describe, expect, it } from "vitest";
+import { csvRecords, parseCsv } from "../../scripts/csv";
+
+const intakePath = "data/inventory.intake.csv";
+
+describe("resolved inventory intake CSV", () => {
+  it("has the stable open-format contract and all 82 resolved rows", async () => {
+    const source = await readFile(intakePath, "utf8");
+    const [headers] = parseCsv(source);
+    const rows = csvRecords(source);
+
+    expect(headers).toEqual([
+      "include",
+      "submitted_wording",
+      "proposed_title",
+      "kind",
+      "parent_title",
+      "edition_or_owned_detail",
+      "match_status",
+      "notes",
+      "source_url"
+    ]);
+    expect(rows).toHaveLength(82);
+    expect(rows.every((row) => row.include === "Yes")).toBe(true);
+    expect(rows.every((row) => row.match_status === "Ready to match")).toBe(true);
+  });
+
+  it("uses unique proposed titles and valid base-game parents", async () => {
+    const rows = csvRecords(await readFile(intakePath, "utf8"));
+    const titles = rows.map((row) => row.proposed_title);
+    const baseTitles = new Set(
+      rows.filter((row) => row.kind !== "Expansion").map((row) => row.proposed_title)
+    );
+
+    expect(new Set(titles).size).toBe(titles.length);
+    expect(
+      rows
+        .filter((row) => row.kind === "Expansion")
+        .every((row) => baseTitles.has(row.parent_title))
+    ).toBe(true);
+  });
+
+  it("preserves the resolved Unsettled and Dice Throne ownership details", async () => {
+    const rows = csvRecords(await readFile(intakePath, "utf8"));
+    const titles = new Set(rows.map((row) => row.proposed_title));
+
+    for (let planet = 1; planet <= 9; planet += 1) {
+      expect(titles.has(`Unsettled: Planet ${String(planet).padStart(3, "0")}`)).toBe(true);
+    }
+    expect(titles).toContain("Unsettled: Scientific Fascination");
+    expect(titles).toContain("Unsettled: Scientific Specialization");
+    expect(titles).toContain("Unsettled: Luna's");
+    expect(titles).toContain("Unsettled: Survival Task Pack 1");
+    expect(titles).toContain("Unsettled: Survival Task Pack 2");
+    expect(titles).toContain("Dice Throne: Season One – Barbarian & Moon Elf");
+    expect(titles).toContain("Dice Throne: Season One – Pyromancer & Shadow Thief");
+  });
+});
