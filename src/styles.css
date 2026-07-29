@@ -958,6 +958,310 @@ output {
   font-weight: 500;
 }
 
+.setup-shell {
+  margin: 2.5rem 0;
+}
+
+.setup-gate {
+  min-height: min(640px, 72vh);
+  display: grid;
+  place-items: center;
+  padding: 2.5rem 0;
+}
+
+.setup-gate-card {
+  width: min(620px, 100%);
+  padding: clamp(1.6rem, 6vw, 3.5rem);
+  border: 1px solid var(--line);
+  border-radius: 1.7rem;
+  background: white;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+
+.setup-gate-mark {
+  width: 3rem;
+  height: 3rem;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 1rem;
+  border-radius: 50%;
+  color: white;
+  background: var(--purple);
+  font-size: 1.35rem;
+  font-weight: 900;
+}
+
+.setup-gate-card h1 {
+  margin-bottom: 0.75rem;
+  font-size: clamp(1.8rem, 5vw, 2.8rem);
+}
+
+.setup-gate-card p {
+  max-width: 480px;
+  margin: 0 auto 1.4rem;
+  color: #6b6075;
+  line-height: 1.65;
+}
+
+.setup-access-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid #4b8b68;
+  border-radius: 0.8rem;
+  color: #214c34;
+  background: #e5f6ec;
+}
+
+.setup-overview,
+.setup-toolbar,
+.setup-card > header,
+.setup-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.setup-overview {
+  align-items: flex-end;
+  margin-bottom: 1.5rem;
+}
+
+.setup-overview h1 {
+  margin-bottom: 0.55rem;
+  font-size: clamp(2rem, 5vw, 3.5rem);
+}
+
+.setup-overview p {
+  max-width: 620px;
+  margin-bottom: 0;
+  color: #6b6075;
+  line-height: 1.6;
+}
+
+.setup-progress {
+  width: min(260px, 100%);
+  flex: none;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.35rem 1rem;
+  color: #6b6075;
+  font-size: 0.78rem;
+}
+
+.setup-progress strong {
+  color: var(--ink);
+  font-size: 1rem;
+}
+
+.setup-progress progress {
+  width: 100%;
+  height: 0.75rem;
+  grid-column: 1 / -1;
+  accent-color: var(--orange);
+}
+
+.setup-toolbar {
+  margin-bottom: 1rem;
+  padding: 1rem 1.2rem;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.setup-complete {
+  margin-bottom: 1rem;
+  padding: 1rem 1.2rem;
+  border: 1px solid #4b8b68;
+  border-radius: 0.8rem;
+  color: #214c34;
+  background: #e5f6ec;
+  line-height: 1.5;
+}
+
+.setup-complete strong {
+  display: block;
+}
+
+.setup-toolbar label {
+  width: min(420px, 100%);
+}
+
+.setup-downloads {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.restore-button {
+  position: relative;
+  overflow: hidden;
+  padding: 0.6rem;
+  color: var(--purple);
+  font-weight: 750;
+  text-align: center;
+  cursor: pointer;
+}
+
+.restore-button input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+}
+
+.restore-button:focus-within {
+  outline: 3px solid #0b73d9;
+  outline-offset: 3px;
+}
+
+.setup-card {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 1.5rem;
+  background: white;
+  box-shadow: var(--shadow);
+}
+
+.setup-card > header {
+  padding: 1.6rem 2rem;
+  color: white;
+  background: var(--purple-dark);
+}
+
+.setup-card > header .eyebrow {
+  color: var(--gold);
+}
+
+.setup-card > header h2 {
+  margin-bottom: 0;
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+}
+
+.complete-badge {
+  padding: 0.45rem 0.7rem;
+  border-radius: 999px;
+  color: var(--purple-dark);
+  background: var(--mint);
+  font-size: 0.75rem;
+  font-weight: 850;
+}
+
+.setup-section {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.34fr) 1fr;
+  gap: 2rem;
+  padding: 1.8rem 2rem;
+  border-bottom: 1px solid #eee7df;
+}
+
+.setup-section h3 {
+  margin: 0 0 0.4rem;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.25rem;
+}
+
+.setup-section > div:first-child p {
+  margin-bottom: 0;
+  color: #74697d;
+  font-size: 0.8rem;
+  line-height: 1.55;
+}
+
+.setup-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.setup-fields .wide {
+  grid-column: 1 / -1;
+}
+
+.rating-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.setup-modes {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.setup-modes legend {
+  width: 100%;
+  margin-bottom: 0.1rem;
+}
+
+.setup-modes label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: 0.65rem;
+  background: #fffdf8;
+}
+
+.setup-modes input {
+  width: auto;
+  margin: 0;
+}
+
+.local-values {
+  background: #fffaf0;
+}
+
+.local-grid {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.setup-actions {
+  justify-content: flex-end;
+  padding: 1.4rem 2rem 0.5rem;
+}
+
+.setup-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.setup-notice {
+  min-height: 1.5rem;
+  margin: 0;
+  padding: 0.2rem 2rem 1.3rem;
+  color: #7a4100;
+  text-align: right;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.setup-privacy {
+  max-width: 760px;
+  margin: 1rem auto 0;
+  color: #716777;
+  text-align: center;
+  font-size: 0.75rem;
+  line-height: 1.55;
+}
+
+.setup-loading {
+  min-height: 320px;
+  display: grid;
+  place-items: center;
+  color: #6b6075;
+}
+
 footer {
   max-width: 1180px;
   display: flex;
@@ -1005,8 +1309,14 @@ footer p {
   }
 
   .roulette-card,
-  .maintenance-card {
+  .maintenance-card,
+  .setup-section {
     grid-template-columns: 1fr;
+  }
+
+  .rating-grid,
+  .local-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .roulette-copy {
@@ -1121,12 +1431,51 @@ footer p {
   }
 
   .match-explanation,
-  .form-grid {
+  .form-grid,
+  .setup-fields {
     grid-template-columns: 1fr;
   }
 
-  .form-grid .wide {
+  .form-grid .wide,
+  .setup-fields .wide,
+  .setup-modes {
     grid-column: auto;
+  }
+
+  .setup-overview,
+  .setup-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .setup-progress {
+    width: 100%;
+  }
+
+  .setup-downloads {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .setup-card > header,
+  .setup-section {
+    padding: 1.3rem;
+  }
+
+  .setup-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    padding-inline: 1.3rem;
+  }
+
+  .setup-actions .primary-button {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+
+  .setup-notice {
+    padding-inline: 1.3rem;
+    text-align: left;
   }
 
   footer {

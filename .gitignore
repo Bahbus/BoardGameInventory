@@ -5,6 +5,7 @@ playwright-report/
 test-results/
 outputs/
 public/catalog.json
+public/house-intake.json
 lighthouse-report.json
 .env
 .DS_Store

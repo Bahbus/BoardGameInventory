@@ -63,17 +63,32 @@ BGG_API_TOKEN=... npm run inventory:match
 The live matcher suggests exact and near matches in `outputs/inventory-match-report.csv`; it
 never accepts a candidate automatically.
 
-House-specific information can be collected independently of BGG:
+House-specific information can be collected independently of BGG. The intended owner workflow
+is the site's **Setup** screen. Setup remains completely locked until the separate GitHub
+verification service confirms that the signed-in account is a repository collaborator. Once
+verified, it presents one game at a time, saves progress only in that browser, supports JSON
+backup and restore between devices, and downloads the finished answers as an open CSV file for
+repository import. The owner never needs to edit CSV directly.
+
+Regenerate the browser questionnaire after changing the matching manifest:
 
 ```sh
 npm run inventory:prepare-house
+npm run house-editor:build
 ```
 
-This creates `data/inventory.house.csv`, with one row per selectable game and blank public fields
-for learned state, shelf label, ratings, setup and teaching burden, table space, interaction,
-luck, downtime, modes, moods, accessibility, content, and recommendation notes. Semicolon-delimit
-multi-value cells. Rows marked `local_values_required=yes` must also receive complete
-player-count, duration, and minimum-age values before canonical import.
+The first command creates the version-controlled `data/inventory.house.csv` source with one row
+per selectable game. The second validates that source and creates
+`outputs/house-intake.json` for the private verification service. It is never packaged in the
+public GitHub Pages artifact. Setup collects learned state, shelf label, ratings, setup and
+teaching burden, table space, interaction, luck, downtime, modes, moods, accessibility, content,
+and recommendation notes. Local-only games also require player-count, duration, and minimum-age
+answers so they remain fully filterable.
+
+Set the public service URL at build time using `VITE_SETUP_SERVICE_URL`. If it is absent or
+invalid, the site fails closed and explains that verification is unavailable. Never place a
+GitHub token, OAuth secret, or GitHub App private key in a `VITE_` variable; those values are
+embedded in the public browser build.
 
 Copy `data/inventory.example.csv`, replace the sample rows, then run:
 
