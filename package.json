@@ -19,6 +19,9 @@
     "check": "npm run format:check && npm run lint && npm run typecheck && npm test && npm run build",
     "inventory:validate": "node --import tsx scripts/validateInventory.ts",
     "inventory:import": "node --import tsx scripts/importCsv.ts",
+    "inventory:prepare": "node --import tsx scripts/prepareMatchingManifest.ts",
+    "inventory:prepare-house": "node --import tsx scripts/prepareHouseIntake.ts",
+    "inventory:match": "node --import tsx scripts/matchInventory.ts",
     "request:apply": "node --import tsx scripts/applyIssueRequest.ts"
   },
   "dependencies": {

@@ -50,3 +50,20 @@ export function csvRecords(source: string): Array<Record<string, string>> {
     return Object.fromEntries(normalized.map((header, index) => [header, row[index].trim()]));
   });
 }
+
+const escapeCsv = (value: string | number | boolean | undefined) => {
+  const text = value === undefined ? "" : String(value);
+  return /[",\r\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
+};
+
+export function recordsToCsv(
+  records: Array<Record<string, string | number | boolean | undefined>>,
+  headers: string[]
+): string {
+  return [
+    headers.join(","),
+    ...records.map((record) => headers.map((header) => escapeCsv(record[header])).join(","))
+  ]
+    .join("\n")
+    .concat("\n");
+}
