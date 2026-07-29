@@ -163,3 +163,101 @@ test("reveals roulette results immediately when reduced motion is requested", as
   await expect(page.getByRole("button", { name: "Skip animation" })).toHaveCount(0);
   await expect(page.locator(".winner-panel")).toHaveAttribute("aria-busy", "false");
 });
+
+test("guides house answers one game at a time and keeps progress locally", async ({ page }) => {
+  const setupGames = [
+    {
+      slug: "first-game",
+      title: "First Game",
+      availability: "available",
+      learned: "",
+      shelf: "",
+      houseRating: "",
+      setupMinutes: "",
+      teachDifficulty: "",
+      tableSpace: "",
+      interaction: "",
+      luck: "",
+      downtime: "",
+      modes: "",
+      moods: "",
+      accessibilityFlags: "",
+      contentFlags: "",
+      recommendationNotes: "",
+      localValuesRequired: "no",
+      localMinPlayers: "",
+      localMaxPlayers: "",
+      localMinMinutes: "",
+      localMaxMinutes: "",
+      localMinAge: ""
+    },
+    {
+      slug: "local-game",
+      title: "Local Game",
+      availability: "available",
+      learned: "",
+      shelf: "",
+      houseRating: "",
+      setupMinutes: "",
+      teachDifficulty: "",
+      tableSpace: "",
+      interaction: "",
+      luck: "",
+      downtime: "",
+      modes: "",
+      moods: "",
+      accessibilityFlags: "",
+      contentFlags: "alcohol",
+      recommendationNotes: "",
+      localValuesRequired: "yes",
+      localMinPlayers: "",
+      localMaxPlayers: "",
+      localMinMinutes: "",
+      localMaxMinutes: "",
+      localMinAge: ""
+    }
+  ];
+  await page.route("**/house-intake.json", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ schemaVersion: 1, games: setupGames })
+    })
+  );
+
+  await page.getByRole("button", { name: "Setup", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "First Game" })).toBeVisible();
+  await page.getByLabel("Have you learned it?").selectOption("yes");
+  await page.getByLabel("Overall house rating").selectOption("4");
+  await page.getByLabel("Cooperative").check();
+  await page.getByRole("button", { name: "Save & next" }).click();
+
+  await expect(page.getByRole("heading", { name: "Local Game" })).toBeVisible();
+  await expect(page.getByText("1 of 2", { exact: true })).toBeVisible();
+  await page.getByLabel("Have you learned it?").selectOption("no");
+  await page.getByLabel("Minimum players").fill("2");
+  await page.getByLabel("Maximum players").fill("8");
+  await page.getByLabel("Minimum minutes").fill("15");
+  await page.getByLabel("Maximum minutes").fill("30");
+  await page.getByLabel("Minimum age").fill("18");
+  await page.getByRole("button", { name: "Save game" }).click();
+  await expect(page.getByText("2 of 2", { exact: true })).toBeVisible();
+  await expect(page.getByText("Every game has a completed answer.")).toBeVisible();
+
+  const downloadPromise = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Download answers" }).click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toBe("inventory-house-answers.csv");
+
+  await page.reload();
+  await page.getByRole("button", { name: "Setup", exact: true }).click();
+  await expect(page.getByText("2 of 2", { exact: true })).toBeVisible();
+});
+
+test("keeps the guided setup screen free of detectable accessibility violations", async ({
+  page
+}) => {
+  await page.getByRole("button", { name: "Setup", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Tell us about the games" })).toBeVisible();
+  const results = await new AxeBuilder({ page }).analyze();
+  expect(results.violations).toEqual([]);
+});

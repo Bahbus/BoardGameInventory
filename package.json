@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "catalog:build": "node --import tsx scripts/generateCatalog.ts",
-    "dev": "npm run catalog:build && vite",
-    "build": "npm run catalog:build && vite build",
+    "house-editor:build": "node --import tsx scripts/generateHouseEditorData.ts",
+    "dev": "npm run catalog:build && npm run house-editor:build && vite",
+    "build": "npm run catalog:build && npm run house-editor:build && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --max-warnings=0",

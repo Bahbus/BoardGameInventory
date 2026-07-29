@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
+import { HouseEditor } from "./HouseEditor";
 import {
   createStandalonePlayModes,
   effectiveValues,
@@ -22,7 +23,7 @@ const STORAGE_KEY = "board-game-inventory:preferences:v1";
 const DRAWN_KEY = "board-game-inventory:drawn:v1";
 const REPOSITORY_URL = "https://github.com/Bahbus/BoardGameInventory";
 
-type View = "library" | "roulette" | "maintain";
+type View = "library" | "roulette" | "setup" | "maintain";
 
 const formatMinutes = (min?: number, max?: number) => {
   if (min === undefined && max === undefined) return "Time unknown";
@@ -776,6 +777,7 @@ export function App() {
             [
               ["library", "Library"],
               ["roulette", "Roulette"],
+              ["setup", "Setup"],
               ["maintain", "Maintain"]
             ] as const
           ).map(([value, label]) => (
@@ -795,23 +797,25 @@ export function App() {
       </header>
 
       <main id="main">
-        <section class="hero">
-          <div class="hero-copy">
-            <span class="eyebrow">Your shelves, sorted for tonight</span>
-            <h1>
-              Find the game that <em>fits the table.</em>
-            </h1>
-            <p>
-              Set the group size, time, and vibe. Browse the best matches—or let the roulette settle
-              it.
-            </p>
-          </div>
-          <div class="hero-decor" aria-hidden="true">
-            <div class="die die-one">⚄</div>
-            <div class="meeple">♟</div>
-            <div class="card-shape">PLAY</div>
-          </div>
-        </section>
+        {view !== "setup" && (
+          <section class="hero">
+            <div class="hero-copy">
+              <span class="eyebrow">Your shelves, sorted for tonight</span>
+              <h1>
+                Find the game that <em>fits the table.</em>
+              </h1>
+              <p>
+                Set the group size, time, and vibe. Browse the best matches—or let the roulette
+                settle it.
+              </p>
+            </div>
+            <div class="hero-decor" aria-hidden="true">
+              <div class="die die-one">⚄</div>
+              <div class="meeple">♟</div>
+              <div class="card-shape">PLAY</div>
+            </div>
+          </section>
+        )}
 
         {stale && (
           <div class="status-banner" role="status">
@@ -819,13 +823,15 @@ export function App() {
           </div>
         )}
 
-        {view !== "maintain" && (
+        {(view === "library" || view === "roulette") && (
           <FilterPanel preferences={preferences} onChange={setPreferences} games={games} />
         )}
 
         {view === "roulette" && <Roulette games={scored} drawn={drawn} setDrawn={setDrawn} />}
 
         {view === "maintain" && <Maintenance />}
+
+        {view === "setup" && <HouseEditor />}
 
         {view === "library" && (
           <section class="library-section" aria-labelledby="library-title">

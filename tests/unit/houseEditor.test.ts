@@ -1,0 +1,127 @@
+import { describe, expect, it } from "vitest";
+import {
+  houseAnswersToCsv,
+  mergeHouseProgress,
+  parseHouseEditorDataset,
+  parseSavedHouseProgress,
+  validateHouseAnswer,
+  type HouseAnswer
+} from "../../src/lib/houseEditor";
+
+const answer = (overrides: Partial<HouseAnswer> = {}): HouseAnswer => ({
+  slug: "example-game",
+  title: "Example Game",
+  availability: "available",
+  learned: "",
+  shelf: "",
+  houseRating: "",
+  setupMinutes: "",
+  teachDifficulty: "",
+  tableSpace: "",
+  interaction: "",
+  luck: "",
+  downtime: "",
+  modes: "",
+  moods: "",
+  accessibilityFlags: "",
+  contentFlags: "",
+  recommendationNotes: "",
+  localValuesRequired: "no",
+  localMinPlayers: "",
+  localMaxPlayers: "",
+  localMinMinutes: "",
+  localMaxMinutes: "",
+  localMinAge: "",
+  ...overrides
+});
+
+describe("browser house editor", () => {
+  it("validates the generated dataset and rejects duplicate slugs", () => {
+    expect(parseHouseEditorDataset({ schemaVersion: 1, games: [answer()] }).games[0].title).toBe(
+      "Example Game"
+    );
+    expect(() =>
+      parseHouseEditorDataset({ schemaVersion: 1, games: [answer(), answer()] })
+    ).toThrow(/repeats example-game/);
+  });
+
+  it("accepts versioned backups and rejects malformed progress", () => {
+    expect(
+      parseSavedHouseProgress({
+        schemaVersion: 1,
+        answers: { "example-game": { learned: "yes" } },
+        completedSlugs: ["example-game"]
+      }).completedSlugs
+    ).toEqual(["example-game"]);
+    expect(() =>
+      parseSavedHouseProgress({
+        schemaVersion: 1,
+        answers: [],
+        completedSlugs: ["example-game"]
+      })
+    ).toThrow(/unsupported format/);
+  });
+
+  it("merges saved answers without allowing identity fields to drift", () => {
+    const [merged] = mergeHouseProgress([answer()], {
+      schemaVersion: 1,
+      completedSlugs: ["example-game"],
+      answers: {
+        "example-game": {
+          slug: "wrong",
+          title: "Wrong",
+          learned: "yes",
+          houseRating: "5"
+        }
+      }
+    });
+
+    expect(merged).toMatchObject({
+      slug: "example-game",
+      title: "Example Game",
+      learned: "yes",
+      houseRating: "5"
+    });
+  });
+
+  it("requires a learned answer and all five filter values for a local-only game", () => {
+    expect(validateHouseAnswer(answer())).toEqual(["Choose whether the game has been learned."]);
+    expect(
+      validateHouseAnswer(
+        answer({
+          learned: "no",
+          localValuesRequired: "yes",
+          localMinPlayers: "2"
+        })
+      )
+    ).toEqual(["Fill in every local game value so filtering will work."]);
+    expect(
+      validateHouseAnswer(
+        answer({
+          learned: "yes",
+          localValuesRequired: "yes",
+          localMinPlayers: "2",
+          localMaxPlayers: "8",
+          localMinMinutes: "15",
+          localMaxMinutes: "30",
+          localMinAge: "18"
+        })
+      )
+    ).toEqual([]);
+  });
+
+  it("exports deterministic CSV while accepting commas in plain-language lists", () => {
+    const csv = houseAnswersToCsv([
+      answer({
+        learned: "yes",
+        modes: "competitive, team",
+        moods: "cozy, strategic",
+        recommendationNotes: 'Works for people who enjoy "thinky", social games.'
+      })
+    ]);
+
+    expect(csv).toContain("competitive;team");
+    expect(csv).toContain("cozy;strategic");
+    expect(csv).toContain('"Works for people who enjoy ""thinky"", social games."');
+  });
+});
