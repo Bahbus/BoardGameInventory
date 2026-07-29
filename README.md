@@ -9,6 +9,8 @@ The intended site is `https://bahbus.github.io/BoardGameInventory/`.
 ## How it works
 
 - `data/inventory.yaml` is the canonical ownership record.
+- Games absent from BGG use a stable slug, public source URL, and complete local player/time/age
+  values. The application never invents a BGG ID.
 - BoardGameGeek metadata is fetched only in trusted GitHub Actions builds and is packaged into
   the Pages artifact; it is not committed.
 - The browser performs filtering, scoring, and roulette draws locally.
@@ -24,7 +26,7 @@ npm install
 npm run dev
 ```
 
-An empty inventory builds without credentials. A non-empty production deployment requires an
+An empty inventory builds without credentials. A production deployment containing BGG-linked items requires an
 approved BoardGameGeek application token in `BGG_API_TOKEN`.
 
 Useful checks:
@@ -45,8 +47,9 @@ npm run inventory:import -- path/to/inventory.csv
 ```
 
 The importer checks every row before replacing `data/inventory.yaml`. Multi-value cells use
-semicolons. Expansions use `kind=expansion` and must identify an imported base game through
-`parent_bgg_id`.
+semicolons. Expansions use `kind=expansion` and identify an imported base game through
+`parent_slug` (preferred) or `parent_bgg_id`. A row without `bgg_id` must provide `source_url`
+and every `override_*` player/time/age field so it remains fully filterable.
 
 ## GitHub setup
 

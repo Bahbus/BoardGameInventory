@@ -1,13 +1,12 @@
 import { mkdir, writeFile } from "node:fs/promises";
-import type { BggMetadata, CatalogGame, CatalogPayload } from "../src/types";
+import type { BggMetadata, CatalogGame, CatalogMetadata, CatalogPayload } from "../src/types";
 import { fetchBggMetadata } from "./bgg";
 import { readInventory } from "./inventoryIo";
 
 const inventory = await readInventory();
-const ids = inventory.games.flatMap((game) => [
-  game.bggId,
-  ...game.expansions.map((expansion) => expansion.bggId)
-]);
+const ids = inventory.games
+  .flatMap((game) => [game.bggId, ...game.expansions.map((expansion) => expansion.bggId)])
+  .filter((id): id is number => id !== undefined);
 const token = process.env.BGG_API_TOKEN;
 if (process.env.REQUIRE_BGG_ENRICHMENT === "1" && ids.length && !token) {
   throw new Error("BGG_API_TOKEN is required to deploy a non-empty enriched catalog.");
@@ -15,22 +14,30 @@ if (process.env.REQUIRE_BGG_ENRICHMENT === "1" && ids.length && !token) {
 const enriched = Boolean(token && ids.length);
 const metadata = enriched ? await fetchBggMetadata(ids, token!) : new Map<number, BggMetadata>();
 
-const fallbackMetadata = (bggId: number, name: string): BggMetadata => ({
+const fallbackMetadata = (
+  bggId: number | undefined,
+  name: string,
+  sourceUrl?: string
+): CatalogMetadata => ({
   bggId,
   name,
   categories: [],
   mechanics: [],
   modes: [],
   playerRecommendations: [],
-  url: `https://boardgamegeek.com/boardgame/${bggId}`
+  url: bggId ? `https://boardgamegeek.com/boardgame/${bggId}` : sourceUrl
 });
 
 const games: CatalogGame[] = inventory.games.map((game) => ({
   ...game,
-  metadata: metadata.get(game.bggId) ?? fallbackMetadata(game.bggId, game.name),
+  metadata:
+    (game.bggId === undefined ? undefined : metadata.get(game.bggId)) ??
+    fallbackMetadata(game.bggId, game.name, game.sourceUrl),
   expansions: game.expansions.map((expansion) => ({
     ...expansion,
-    metadata: metadata.get(expansion.bggId) ?? fallbackMetadata(expansion.bggId, expansion.name)
+    metadata:
+      (expansion.bggId === undefined ? undefined : metadata.get(expansion.bggId)) ??
+      fallbackMetadata(expansion.bggId, expansion.name, expansion.sourceUrl)
   }))
 }));
 

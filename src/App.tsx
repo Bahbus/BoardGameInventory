@@ -420,11 +420,22 @@ function GameCard({ entry }: { entry: ScoredGame }) {
           </details>
         )}
         <div class="card-links">
-          <a href={game.metadata.url} target="_blank" rel="noreferrer">
-            View on BGG <span aria-hidden="true">↗</span>
-          </a>
+          {game.metadata.url && (
+            <a href={game.metadata.url} target="_blank" rel="noreferrer">
+              {game.bggId ? "View on BGG" : "View product source"} <span aria-hidden="true">↗</span>
+            </a>
+          )}
           <a
-            href={`${REPOSITORY_URL}/issues/new?template=inventory-update.yml&bgg-id=${game.bggId}&game-name=${encodeURIComponent(game.name)}`}
+            href={buildIssueUrl(REPOSITORY_URL, {
+              operation: "update",
+              bggId: game.bggId?.toString() ?? "",
+              sourceUrl: game.sourceUrl ?? "",
+              name: game.name,
+              slug: game.slug,
+              parentId: "",
+              parentSlug: "",
+              notes: ""
+            })}
           >
             Suggest edit
           </a>
@@ -566,21 +577,25 @@ function Roulette({
 function Maintenance() {
   const [operation, setOperation] = useState<"add" | "update" | "remove">("add");
   const [bggId, setBggId] = useState("");
+  const [sourceUrl, setSourceUrl] = useState("");
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [parentId, setParentId] = useState("");
+  const [parentSlug, setParentSlug] = useState("");
   const [notes, setNotes] = useState("");
 
   const url = useMemo(() => {
     return buildIssueUrl(REPOSITORY_URL, {
       operation,
       bggId,
+      sourceUrl,
       name,
       slug,
       parentId,
+      parentSlug,
       notes
     });
-  }, [operation, bggId, name, slug, parentId, notes]);
+  }, [operation, bggId, sourceUrl, name, slug, parentId, parentSlug, notes]);
 
   return (
     <section class="maintenance-card">
@@ -620,15 +635,25 @@ function Maintenance() {
         </fieldset>
         <div class="form-grid">
           <label>
-            BGG ID
+            BGG ID <span class="optional-label">(optional)</span>
             <input
-              required
               inputMode="numeric"
               value={bggId}
               onInput={(event) => setBggId(event.currentTarget.value)}
-              placeholder="e.g. 68448"
+              placeholder="Leave blank for a local-only game"
             />
           </label>
+          {operation === "add" && (
+            <label>
+              Product source URL
+              <input
+                type="url"
+                value={sourceUrl}
+                onInput={(event) => setSourceUrl(event.currentTarget.value)}
+                placeholder="Required when there is no BGG ID"
+              />
+            </label>
+          )}
           <label>
             Game name
             <input
@@ -637,19 +662,29 @@ function Maintenance() {
               placeholder="7 Wonders"
             />
           </label>
+          <label>
+            Stable slug
+            <input
+              required
+              value={slug}
+              onInput={(event) => setSlug(event.currentTarget.value)}
+              pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
+              placeholder="7-wonders"
+            />
+          </label>
           {operation === "add" && (
             <>
               <label>
-                Stable slug
+                Parent slug
                 <input
-                  value={slug}
-                  onInput={(event) => setSlug(event.currentTarget.value)}
+                  value={parentSlug}
+                  onInput={(event) => setParentSlug(event.currentTarget.value)}
                   pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
-                  placeholder="7-wonders"
+                  placeholder="Preferred for an expansion"
                 />
               </label>
               <label>
-                Parent BGG ID
+                Parent BGG ID <span class="optional-label">(optional)</span>
                 <input
                   inputMode="numeric"
                   value={parentId}

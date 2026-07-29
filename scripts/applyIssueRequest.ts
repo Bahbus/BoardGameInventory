@@ -1,4 +1,4 @@
-import type { Availability, InventoryGame, OwnedExpansion } from "../src/types";
+import type { Availability, InventoryGame, OwnedExpansion, ValueOverrides } from "../src/types";
 import { formatZodError, readInventory, writeInventory } from "./inventoryIo";
 import { fieldsFromIssue } from "./issueRequest";
 
@@ -11,6 +11,9 @@ const integer = (value: string | undefined, label: string) => {
   return parsed;
 };
 
+const optionalInteger = (value: string | undefined, label: string) =>
+  value ? integer(value, label) : undefined;
+
 const optionalNumber = (value: string | undefined) => {
   if (!value) return undefined;
   const parsed = Number(value);
@@ -20,6 +23,14 @@ const optionalNumber = (value: string | undefined) => {
 
 const boolean = (value: string | undefined) =>
   value?.toLocaleLowerCase() === "true" || value?.includes("[x]") || value === "Yes";
+
+const overrideValues = (fields: Map<string, string>): ValueOverrides => ({
+  minPlayers: optionalInteger(fields.get("Minimum players"), "Minimum players"),
+  maxPlayers: optionalInteger(fields.get("Maximum players"), "Maximum players"),
+  minMinutes: optionalNumber(fields.get("Minimum minutes")),
+  maxMinutes: optionalNumber(fields.get("Maximum minutes")),
+  minAge: optionalNumber(fields.get("Minimum age"))
+});
 
 const operation = process.env.REQUEST_OPERATION as Operation | undefined;
 const body = process.env.ISSUE_BODY ?? "";
@@ -31,39 +42,61 @@ if (!operation || !["add", "update", "remove"].includes(operation)) {
 try {
   const inventory = await readInventory();
   const fields = fieldsFromIssue(body);
-  const bggId = integer(fields.get("BGG ID"), "BGG ID");
-  const locate = () => {
-    const base = inventory.games.find((game) => game.bggId === bggId);
+  const bggId = optionalInteger(fields.get("BGG ID"), "BGG ID");
+  const slug = fields.get("Stable slug");
+  const locate = (targetSlug: string) => {
+    const base = inventory.games.find((game) => game.slug === targetSlug);
     if (base) return { kind: "game" as const, base };
     for (const parent of inventory.games) {
-      const expansion = parent.expansions.find((item) => item.bggId === bggId);
+      const expansion = parent.expansions.find((item) => item.slug === targetSlug);
       if (expansion) return { kind: "expansion" as const, base: parent, expansion };
     }
     return undefined;
   };
 
   if (operation === "add") {
-    if (locate()) throw new Error(`BGG ID ${bggId} is already in the inventory.`);
     const name = fields.get("Game name");
-    const slug = fields.get("Stable slug");
     if (!name || !slug) throw new Error("Game name and Stable slug are required.");
+    if (locate(slug)) throw new Error(`Slug ${slug} is already in the inventory.`);
+    if (
+      bggId !== undefined &&
+      inventory.games.some(
+        (game) =>
+          game.bggId === bggId || game.expansions.some((expansion) => expansion.bggId === bggId)
+      )
+    ) {
+      throw new Error(`BGG ID ${bggId} is already in the inventory.`);
+    }
     const parentValue = fields.get("Parent BGG ID");
-    const parentBggId = parentValue ? integer(parentValue, "Parent BGG ID") : undefined;
+    const parentBggId = optionalInteger(parentValue, "Parent BGG ID");
+    const parentSlug = fields.get("Parent slug");
     const availability = (fields.get("Availability") ?? "available") as Availability;
     const shared = {
       slug,
       bggId,
+      sourceUrl: fields.get("Source URL"),
       name,
       edition: fields.get("Edition"),
       quantity: optionalNumber(fields.get("Quantity")) ?? 1,
       shelf: fields.get("Shelf label"),
       availability,
       learned: boolean(fields.get("Learned")),
-      ownershipNotes: fields.get("Ownership notes")
+      ownershipNotes: fields.get("Ownership notes"),
+      overrides: overrideValues(fields)
     };
-    if (parentBggId !== undefined) {
-      const parent = inventory.games.find((game) => game.bggId === parentBggId);
-      if (!parent) throw new Error(`Parent BGG ID ${parentBggId} is not in the inventory.`);
+    if (parentSlug || parentBggId !== undefined) {
+      const parentBySlug = parentSlug
+        ? inventory.games.find((game) => game.slug === parentSlug)
+        : undefined;
+      const parentById =
+        parentBggId === undefined
+          ? undefined
+          : inventory.games.find((game) => game.bggId === parentBggId);
+      if (parentBySlug && parentById && parentBySlug !== parentById) {
+        throw new Error("Parent slug and Parent BGG ID identify different games.");
+      }
+      const parent = parentBySlug ?? parentById;
+      if (!parent) throw new Error("The requested expansion parent is not in the inventory.");
       const expansion: OwnedExpansion = {
         ...shared,
         standalone: boolean(fields.get("Standalone"))
@@ -89,9 +122,13 @@ try {
       inventory.games.sort((left, right) => left.name.localeCompare(right.name));
     }
   } else if (operation === "update") {
-    const found = locate();
-    if (!found) throw new Error(`BGG ID ${bggId} is not in the inventory.`);
+    if (!slug) throw new Error("Stable slug is required.");
+    const found = locate(slug);
+    if (!found) throw new Error(`Slug ${slug} is not in the inventory.`);
     const target = found.kind === "game" ? found.base : found.expansion;
+    if (bggId !== undefined && target.bggId !== bggId) {
+      throw new Error(`BGG ID ${bggId} does not match slug ${slug}.`);
+    }
     const name = fields.get("Game name");
     const shelf = fields.get("Shelf label");
     const availability = fields.get("Availability");
@@ -101,6 +138,15 @@ try {
     if (availability) target.availability = availability as Availability;
     if (fields.has("Learned")) target.learned = boolean(fields.get("Learned"));
     if (notes) target.ownershipNotes = notes === "(clear)" ? undefined : notes;
+    const sourceUrl = fields.get("Source URL");
+    if (sourceUrl) target.sourceUrl = sourceUrl === "(clear)" ? undefined : sourceUrl;
+    const nextOverrides = overrideValues(fields);
+    const overrideEntries = Object.entries(nextOverrides).filter(
+      ([, value]) => value !== undefined
+    );
+    if (overrideEntries.length) {
+      target.overrides = { ...target.overrides, ...Object.fromEntries(overrideEntries) };
+    }
     if (found.kind === "game") {
       const rating = optionalNumber(fields.get("House rating"));
       const setup = optionalNumber(fields.get("Setup minutes"));
@@ -114,20 +160,25 @@ try {
           recommendation === "(clear)" ? undefined : recommendation;
     }
   } else {
-    const found = locate();
-    if (!found) throw new Error(`BGG ID ${bggId} is not in the inventory.`);
+    if (!slug) throw new Error("Stable slug is required.");
+    const found = locate(slug);
+    if (!found) throw new Error(`Slug ${slug} is not in the inventory.`);
+    const target = found.kind === "game" ? found.base : found.expansion;
+    if (bggId !== undefined && target.bggId !== bggId) {
+      throw new Error(`BGG ID ${bggId} does not match slug ${slug}.`);
+    }
     if (!boolean(fields.get("Confirm removal"))) {
       throw new Error("The removal confirmation must be checked.");
     }
     if (found.kind === "game") {
-      inventory.games = inventory.games.filter((game) => game.bggId !== bggId);
+      inventory.games = inventory.games.filter((game) => game.slug !== slug);
     } else {
-      found.base.expansions = found.base.expansions.filter((item) => item.bggId !== bggId);
+      found.base.expansions = found.base.expansions.filter((item) => item.slug !== slug);
     }
   }
 
   await writeInventory(inventory);
-  console.log(`${operation} request applied for BGG ID ${bggId}.`);
+  console.log(`${operation} request applied for slug ${slug}.`);
 } catch (error) {
   console.error(formatZodError(error));
   process.exitCode = 1;

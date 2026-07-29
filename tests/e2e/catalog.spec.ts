@@ -28,10 +28,57 @@ test("reveals a weighted roulette result and supports reset", async ({ page }) =
 
 test("prefills an authenticated GitHub maintenance request", async ({ page }) => {
   await page.getByRole("button", { name: "Maintain" }).click();
-  await page.getByLabel("BGG ID", { exact: true }).fill("68448");
+  await page.getByRole("textbox", { name: "BGG ID (optional)", exact: true }).fill("68448");
   await page.getByLabel("Game name").fill("7 Wonders");
   await page.getByLabel("Stable slug").fill("7-wonders");
   await expect(page.getByRole("button", { name: /Continue securely on GitHub/ })).toBeEnabled();
+});
+
+test("shows a local-only game with its product source and slug-based edit link", async ({
+  page
+}) => {
+  const localGame = {
+    ...catalogFixture.games[1],
+    slug: "local-party-game",
+    bggId: undefined,
+    sourceUrl: "https://publisher.example/local-party-game",
+    name: "Local Party Game",
+    overrides: {
+      minPlayers: 2,
+      maxPlayers: 12,
+      minMinutes: 15,
+      maxMinutes: 30,
+      minAge: 18
+    },
+    metadata: {
+      ...catalogFixture.games[1].metadata,
+      bggId: undefined,
+      name: "Local Party Game",
+      url: "https://publisher.example/local-party-game"
+    }
+  };
+  await page.unroute("**/catalog.json");
+  await page.route("**/catalog.json", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ ...catalogFixture, games: [localGame] })
+    })
+  );
+  await page.reload();
+
+  await expect(page.getByRole("heading", { name: "Local Party Game" })).toBeVisible();
+  await expect(page.getByRole("link", { name: /View product source/ })).toHaveAttribute(
+    "href",
+    "https://publisher.example/local-party-game"
+  );
+  await expect(page.getByRole("link", { name: "Suggest edit" })).toHaveAttribute(
+    "href",
+    /slug=local-party-game/
+  );
+  await expect(page.getByRole("link", { name: "Suggest edit" })).not.toHaveAttribute(
+    "href",
+    /bgg-id=/
+  );
 });
 
 test("has no automatically detectable accessibility violations", async ({ page }) => {

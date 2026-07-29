@@ -7,6 +7,12 @@ body:
     id: bgg-id
     attributes:
       label: BGG ID
+      description: Optional cross-check for a BGG-linked item.
+  - type: input
+    id: slug
+    attributes:
+      label: Stable slug
+      description: The inventory slug shown in the edit link.
     validations:
       required: true
   - type: input
@@ -14,6 +20,11 @@ body:
     attributes:
       label: Game name
       description: Leave empty to keep the current name.
+  - type: input
+    id: source-url
+    attributes:
+      label: Source URL
+      description: Leave empty to keep it; enter (clear) to remove it.
   - type: input
     id: shelf
     attributes:
@@ -43,6 +54,26 @@ body:
     attributes:
       label: Teach difficulty
       description: Optional difficulty from 1 to 5.
+  - type: input
+    id: min-players
+    attributes:
+      label: Minimum players
+  - type: input
+    id: max-players
+    attributes:
+      label: Maximum players
+  - type: input
+    id: min-minutes
+    attributes:
+      label: Minimum minutes
+  - type: input
+    id: max-minutes
+    attributes:
+      label: Maximum minutes
+  - type: input
+    id: min-age
+    attributes:
+      label: Minimum age
   - type: textarea
     id: notes
     attributes:

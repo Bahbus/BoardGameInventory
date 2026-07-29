@@ -952,6 +952,12 @@ output {
   font-size: 0.75rem;
 }
 
+.optional-label {
+  color: #786e81;
+  font-size: 0.82em;
+  font-weight: 500;
+}
+
 footer {
   max-width: 1180px;
   display: flex;

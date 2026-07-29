@@ -10,10 +10,14 @@ body:
     id: bgg-id
     attributes:
       label: BGG ID
-      description: The numeric ID from the BoardGameGeek URL.
+      description: The numeric ID from the BoardGameGeek URL. Leave blank for a local-only item.
       placeholder: "68448"
-    validations:
-      required: true
+  - type: input
+    id: source-url
+    attributes:
+      label: Source URL
+      description: Required for a local-only item without a BGG ID.
+      placeholder: https://publisher.example/game
   - type: input
     id: game-name
     attributes:
@@ -29,10 +33,15 @@ body:
     validations:
       required: true
   - type: input
+    id: parent-slug
+    attributes:
+      label: Parent slug
+      description: Preferred way to identify the owned base game for an expansion.
+  - type: input
     id: parent-bgg-id
     attributes:
       label: Parent BGG ID
-      description: Leave empty for a base game. Expansions require their owned base game's BGG ID.
+      description: Optional alternative to Parent slug.
   - type: dropdown
     id: standalone
     attributes:
@@ -84,6 +93,31 @@ body:
     attributes:
       label: Teach difficulty
       description: Optional difficulty from 1 to 5.
+  - type: input
+    id: min-players
+    attributes:
+      label: Minimum players
+      description: Required for a local-only item.
+  - type: input
+    id: max-players
+    attributes:
+      label: Maximum players
+      description: Required for a local-only item.
+  - type: input
+    id: min-minutes
+    attributes:
+      label: Minimum minutes
+      description: Required for a local-only item.
+  - type: input
+    id: max-minutes
+    attributes:
+      label: Maximum minutes
+      description: Required for a local-only item.
+  - type: input
+    id: min-age
+    attributes:
+      label: Minimum age
+      description: Required for a local-only item.
   - type: textarea
     id: notes
     attributes:
