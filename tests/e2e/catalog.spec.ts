@@ -85,3 +85,81 @@ test("has no automatically detectable accessibility violations", async ({ page }
   const results = await new AxeBuilder({ page }).analyze();
   expect(results.violations).toEqual([]);
 });
+
+test("supports the GitHub Pages repository path", async ({ page }) => {
+  await page.goto("/BoardGameInventory/");
+  await expect(page.getByRole("heading", { name: "3 games ready" })).toBeVisible();
+  await expect(page).toHaveURL(/\/BoardGameInventory\/\?v=1/);
+});
+
+test("offers useful recovery when no game meets the requirements", async ({ page }) => {
+  await page.getByLabel("Group size").fill("99");
+  await expect(
+    page.getByRole("heading", { name: "No game meets every requirement" })
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Clear requirements" }).click();
+  await expect(page.getByRole("heading", { name: "3 games ready" })).toBeVisible();
+});
+
+test("guides an empty collection toward its first addition", async ({ page }) => {
+  await page.unroute("**/catalog.json");
+  await page.route("**/catalog.json", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ ...catalogFixture, games: [] })
+    })
+  );
+  await page.reload();
+
+  await expect(
+    page.getByRole("heading", { name: "The shelves are ready for their first game" })
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Add the first game" }).click();
+  await expect(page.getByRole("heading", { name: "Prepare an inventory request" })).toBeVisible();
+});
+
+test("falls back cleanly when an external cover cannot load", async ({ page }) => {
+  const brokenCover = {
+    ...catalogFixture.games[0],
+    metadata: {
+      ...catalogFixture.games[0].metadata,
+      thumbnail: "https://images.invalid.example/missing-cover.jpg"
+    }
+  };
+  await page.unroute("**/catalog.json");
+  await page.route("**/catalog.json", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ ...catalogFixture, games: [brokenCover] })
+    })
+  );
+  await page.route("https://images.invalid.example/**", (route) => route.abort());
+  await page.reload();
+
+  await expect(page.locator(".cover-fallback").first()).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Forest Council", exact: true })).toBeVisible();
+});
+
+test("supports keyboard navigation between primary views", async ({ page }) => {
+  const maintain = page.getByRole("button", { name: "Maintain" });
+  await maintain.focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("heading", { name: "Prepare an inventory request" })).toBeVisible();
+  await expect(maintain).toBeFocused();
+
+  const roulette = page.getByRole("button", { name: "Roulette", exact: true });
+  await roulette.focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("heading", { name: "Game Night Roulette" })).toBeVisible();
+  await expect(roulette).toBeFocused();
+});
+
+test("reveals roulette results immediately when reduced motion is requested", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.getByRole("button", { name: "Roulette" }).click();
+  await page.getByRole("button", { name: "Spin the roulette" }).click();
+
+  await expect(page.getByText("Tonight’s pick")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Skip animation" })).toHaveCount(0);
+  await expect(page.locator(".winner-panel")).toHaveAttribute("aria-busy", "false");
+});

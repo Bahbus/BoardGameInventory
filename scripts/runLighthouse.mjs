@@ -1,5 +1,5 @@
 import { spawn, spawnSync } from "node:child_process";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { copyFile, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import lighthouse from "lighthouse";
@@ -12,6 +12,7 @@ const build = spawnSync("npm", ["run", "build"], {
   env: { ...process.env, GITHUB_ACTIONS: "true" }
 });
 if (build.status !== 0) process.exit(build.status ?? 1);
+await copyFile("tests/fixtures/catalog.lighthouse.json", "dist/catalog.json");
 const server = spawn("npm", ["run", "preview", "--", "--host", "127.0.0.1", "--port", "4173"], {
   stdio: "inherit",
   env: { ...process.env, GITHUB_ACTIONS: "true" }

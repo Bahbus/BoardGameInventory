@@ -87,6 +87,17 @@ describe("catalog filtering and scoring", () => {
     ).toBe("forest-council");
   });
 
+  it("uses exact cumulative weight boundaries for deterministic draws", () => {
+    const games = filterAndScore([forest, racers], DEFAULT_PREFERENCES);
+    const total = games.reduce((sum, game) => sum + game.rouletteWeight, 0);
+    const firstBoundary = games[0].rouletteWeight / total;
+
+    expect(weightedDraw(games, new Set(), () => firstBoundary - Number.EPSILON)?.game.slug).toBe(
+      games[0].game.slug
+    );
+    expect(weightedDraw(games, new Set(), () => firstBoundary)?.game.slug).toBe(games[1].game.slug);
+  });
+
   it("creates a selectable mode only for standalone expansions", () => {
     const modes = createStandalonePlayModes([forest]);
     expect(modes.map((game) => game.name)).toEqual(["Forest Council", "Forest Council: Fox Den"]);

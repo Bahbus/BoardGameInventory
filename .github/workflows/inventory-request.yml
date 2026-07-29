@@ -87,11 +87,8 @@ jobs:
         env:
           REQUEST_OPERATION: ${{ steps.request.outputs.operation }}
           ISSUE_BODY: ${{ github.event.issue.body }}
-      - name: Validate inventory and BGG identity
+      - name: Validate inventory transaction
         run: npm run inventory:validate && npm run catalog:build
-        env:
-          BGG_API_TOKEN: ${{ secrets.BGG_API_TOKEN }}
-          REQUIRE_BGG_ENRICHMENT: "1"
       - name: Commit transaction
         env:
           BRANCH: inventory/issue-${{ github.event.issue.number }}
