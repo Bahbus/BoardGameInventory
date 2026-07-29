@@ -45,6 +45,36 @@ plain-text review artifact containing the submitted wording, normalized title, o
 parent relationship, notes, and source links. It intentionally remains separate from the
 canonical import format until BGG IDs have been matched and verified.
 
+Prepare the deterministic matching manifest without network access:
+
+```sh
+npm run inventory:prepare
+```
+
+This writes `data/inventory.matching.csv`, assigning stable slugs and parent slugs, extracting
+IDs only from direct BGG item links, preserving local-only sources, and flagging shared IDs for
+manual review. Once the token is available, generate a candidate report without modifying the
+manifest or canonical inventory:
+
+```sh
+BGG_API_TOKEN=... npm run inventory:match
+```
+
+The live matcher suggests exact and near matches in `outputs/inventory-match-report.csv`; it
+never accepts a candidate automatically.
+
+House-specific information can be collected independently of BGG:
+
+```sh
+npm run inventory:prepare-house
+```
+
+This creates `data/inventory.house.csv`, with one row per selectable game and blank public fields
+for learned state, shelf label, ratings, setup and teaching burden, table space, interaction,
+luck, downtime, modes, moods, accessibility, content, and recommendation notes. Semicolon-delimit
+multi-value cells. Rows marked `local_values_required=yes` must also receive complete
+player-count, duration, and minimum-age values before canonical import.
+
 Copy `data/inventory.example.csv`, replace the sample rows, then run:
 
 ```sh
