@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
-import { HouseEditor } from "./HouseEditor";
+import { SetupAccessGate } from "./SetupAccessGate";
 import {
   createStandalonePlayModes,
   effectiveValues,
@@ -24,6 +24,12 @@ const DRAWN_KEY = "board-game-inventory:drawn:v1";
 const REPOSITORY_URL = "https://github.com/Bahbus/BoardGameInventory";
 
 type View = "library" | "roulette" | "setup" | "maintain";
+
+const isSetupAuthCallback = () => {
+  if (typeof window === "undefined") return false;
+  const query = new URLSearchParams(window.location.search);
+  return query.has("code") || query.has("state");
+};
 
 const formatMinutes = (min?: number, max?: number) => {
   if (min === undefined && max === undefined) return "Time unknown";
@@ -720,7 +726,7 @@ function Maintenance() {
 export function App() {
   const [payload, setPayload] = useState<CatalogPayload>();
   const [error, setError] = useState("");
-  const [view, setView] = useState<View>("library");
+  const [view, setView] = useState<View>(() => (isSetupAuthCallback() ? "setup" : "library"));
   const [preferences, setPreferences] = useState<GroupPreferences>(initialPreferences);
   const [drawn, setDrawnState] = useState<string[]>(() => {
     try {
@@ -742,6 +748,7 @@ export function App() {
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(preferences));
+    if (isSetupAuthCallback()) return;
     const search = serializePreferences(preferences);
     window.history.replaceState(null, "", `${window.location.pathname}?${search}`);
   }, [preferences]);
@@ -831,7 +838,7 @@ export function App() {
 
         {view === "maintain" && <Maintenance />}
 
-        {view === "setup" && <HouseEditor />}
+        {view === "setup" && <SetupAccessGate />}
 
         {view === "library" && (
           <section class="library-section" aria-labelledby="library-title">

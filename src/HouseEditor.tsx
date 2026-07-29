@@ -69,7 +69,15 @@ const selectedModes = (value: string) =>
     .map((item) => item.trim())
     .filter(Boolean);
 
-export function HouseEditor() {
+export function HouseEditor({
+  serviceUrl,
+  grant,
+  onVerificationLost
+}: {
+  serviceUrl: URL;
+  grant: string;
+  onVerificationLost: () => void;
+}) {
   const [sourceGames, setSourceGames] = useState<HouseAnswer[]>([]);
   const [progress, setProgress] = useState<SavedHouseProgress>(readProgress);
   const [index, setIndex] = useState(0);
@@ -77,14 +85,20 @@ export function HouseEditor() {
   const [notice, setNotice] = useState("");
 
   useEffect(() => {
-    fetch(`${import.meta.env.BASE_URL}house-intake.json`)
+    fetch(new URL("api/setup/questionnaire", serviceUrl), {
+      headers: { authorization: `Bearer ${grant}` }
+    })
       .then((response) => {
+        if (response.status === 401 || response.status === 403) {
+          onVerificationLost();
+          throw new Error("GitHub collaborator verification is no longer valid.");
+        }
         if (!response.ok) throw new Error("The setup questionnaire could not be loaded.");
         return response.json() as Promise<unknown>;
       })
       .then((value) => setSourceGames(parseHouseEditorDataset(value).games))
       .catch((cause: Error) => setError(cause.message));
-  }, []);
+  }, [grant, onVerificationLost, serviceUrl]);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
@@ -182,8 +196,7 @@ export function HouseEditor() {
           <span class="eyebrow">Guided collection setup</span>
           <h1 id="setup-title">Tell us about the games</h1>
           <p>
-            Answer what you know, one game at a time. Progress stays on this device until you
-            download it.
+            Answer what you know, one game at a time. Progress stays on this device while you work.
           </p>
         </div>
         <div class="setup-progress">
@@ -474,8 +487,8 @@ export function HouseEditor() {
       </article>
 
       <p class="setup-privacy">
-        Nothing is uploaded automatically. The downloaded answers are intended for this public
-        inventory, so use shelf labels rather than addresses or private information.
+        These answers are intended for this public inventory, so use shelf labels rather than
+        addresses or private information.
       </p>
     </section>
   );

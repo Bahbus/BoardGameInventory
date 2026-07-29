@@ -2,6 +2,53 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 import { catalogFixture } from "../fixtures/catalog";
 
+const setupSession = {
+  grant: "test-only-opaque-grant",
+  login: "Bahbus",
+  expiresAt: "2099-01-01T00:00:00.000Z"
+};
+
+const setupGame = {
+  slug: "accessible-game",
+  title: "Accessible Game",
+  availability: "available",
+  learned: "",
+  shelf: "",
+  houseRating: "",
+  setupMinutes: "",
+  teachDifficulty: "",
+  tableSpace: "",
+  interaction: "",
+  luck: "",
+  downtime: "",
+  modes: "",
+  moods: "",
+  accessibilityFlags: "",
+  contentFlags: "",
+  recommendationNotes: "",
+  localValuesRequired: "no",
+  localMinPlayers: "",
+  localMaxPlayers: "",
+  localMinMinutes: "",
+  localMaxMinutes: "",
+  localMinAge: ""
+};
+
+const allowSetup = async (page: import("@playwright/test").Page) => {
+  await page.route("**/test-setup-service/api/setup/session", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ verified: true, ...setupSession })
+    })
+  );
+  await page.evaluate((session) => {
+    globalThis.sessionStorage.setItem(
+      "board-game-inventory:setup-access:v1",
+      JSON.stringify(session)
+    );
+  }, setupSession);
+};
+
 test.beforeEach(async ({ page }) => {
   await page.route("**/catalog.json", (route) =>
     route.fulfill({ contentType: "application/json", body: JSON.stringify(catalogFixture) })
@@ -217,14 +264,16 @@ test("guides house answers one game at a time and keeps progress locally", async
       localMinAge: ""
     }
   ];
-  await page.route("**/house-intake.json", (route) =>
+  await page.route("**/test-setup-service/api/setup/questionnaire", (route) =>
     route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({ schemaVersion: 1, games: setupGames })
     })
   );
+  await allowSetup(page);
 
   await page.getByRole("button", { name: "Setup", exact: true }).click();
+  await expect(page.getByText("Verified collaborator:")).toBeVisible();
   await expect(page.getByRole("heading", { name: "First Game" })).toBeVisible();
   await page.getByLabel("Have you learned it?").selectOption("yes");
   await page.getByLabel("Overall house rating").selectOption("4");
@@ -256,8 +305,48 @@ test("guides house answers one game at a time and keeps progress locally", async
 test("keeps the guided setup screen free of detectable accessibility violations", async ({
   page
 }) => {
+  await page.route("**/test-setup-service/api/setup/questionnaire", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ schemaVersion: 1, games: [setupGame] })
+    })
+  );
+  await allowSetup(page);
   await page.getByRole("button", { name: "Setup", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Tell us about the games" })).toBeVisible();
   const results = await new AxeBuilder({ page }).analyze();
   expect(results.violations).toEqual([]);
+});
+
+test("keeps setup hidden until collaborator access is verified", async ({ page }) => {
+  let questionnaireRequests = 0;
+  await page.route("**/test-setup-service/api/setup/questionnaire", (route) => {
+    questionnaireRequests += 1;
+    return route.abort();
+  });
+
+  await page.getByRole("button", { name: "Setup", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Collaborator verification required" })
+  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Tell us about the games" })).toHaveCount(0);
+  expect(questionnaireRequests).toBe(0);
+});
+
+test("explains failed verification without revealing setup", async ({ page }) => {
+  await page.route("**/test-setup-service/api/setup/session", (route) =>
+    route.fulfill({ status: 403 })
+  );
+  await page.evaluate((session) => {
+    globalThis.sessionStorage.setItem(
+      "board-game-inventory:setup-access:v1",
+      JSON.stringify(session)
+    );
+  }, setupSession);
+
+  await page.getByRole("button", { name: "Setup", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "We couldn’t verify collaborator access" })
+  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Tell us about the games" })).toHaveCount(0);
 });

@@ -962,6 +962,61 @@ output {
   margin: 2.5rem 0;
 }
 
+.setup-gate {
+  min-height: min(640px, 72vh);
+  display: grid;
+  place-items: center;
+  padding: 2.5rem 0;
+}
+
+.setup-gate-card {
+  width: min(620px, 100%);
+  padding: clamp(1.6rem, 6vw, 3.5rem);
+  border: 1px solid var(--line);
+  border-radius: 1.7rem;
+  background: white;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+
+.setup-gate-mark {
+  width: 3rem;
+  height: 3rem;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 1rem;
+  border-radius: 50%;
+  color: white;
+  background: var(--purple);
+  font-size: 1.35rem;
+  font-weight: 900;
+}
+
+.setup-gate-card h1 {
+  margin-bottom: 0.75rem;
+  font-size: clamp(1.8rem, 5vw, 2.8rem);
+}
+
+.setup-gate-card p {
+  max-width: 480px;
+  margin: 0 auto 1.4rem;
+  color: #6b6075;
+  line-height: 1.65;
+}
+
+.setup-access-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid #4b8b68;
+  border-radius: 0.8rem;
+  color: #214c34;
+  background: #e5f6ec;
+}
+
 .setup-overview,
 .setup-toolbar,
 .setup-card > header,
