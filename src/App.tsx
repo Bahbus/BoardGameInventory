@@ -8,10 +8,11 @@ import {
   weightedDraw
 } from "./lib/catalog";
 import { DEFAULT_PREFERENCES, parsePreferences, serializePreferences } from "./lib/preferences";
-import { buildIssueUrl } from "./lib/maintenance";
+import { buildIssueUrl, buildWishlistIssueUrl } from "./lib/maintenance";
 import type {
   CatalogGame,
   CatalogPayload,
+  CatalogWishlistGame,
   GameMode,
   GroupPreferences,
   ScoredGame,
@@ -23,7 +24,7 @@ const STORAGE_KEY = "board-game-inventory:preferences:v1";
 const DRAWN_KEY = "board-game-inventory:drawn:v1";
 const REPOSITORY_URL = "https://github.com/Bahbus/BoardGameInventory";
 
-type View = "library" | "roulette" | "setup" | "maintain";
+type View = "library" | "wishlist" | "roulette" | "setup" | "maintain";
 
 const isSetupAuthCallback = () => {
   if (typeof window === "undefined") return false;
@@ -723,6 +724,140 @@ function Maintenance() {
   );
 }
 
+const wishlistStatus = {
+  interested: "On our radar",
+  researching: "Researching",
+  planned: "Planning to buy"
+} as const;
+
+function WishlistPanel({ games }: { games: CatalogWishlistGame[] }) {
+  const [query, setQuery] = useState("");
+  const [requestName, setRequestName] = useState("");
+  const requestUrl = useMemo(
+    () =>
+      buildWishlistIssueUrl(REPOSITORY_URL, {
+        bggId: "",
+        sourceUrl: "",
+        name: requestName,
+        notes: ""
+      }),
+    [requestName]
+  );
+  const visible = useMemo(() => {
+    const normalized = query.trim().toLocaleLowerCase();
+    const filtered = normalized
+      ? games.filter((game) =>
+          [game.name, game.notes, game.metadata.categories.join(" ")]
+            .filter(Boolean)
+            .join(" ")
+            .toLocaleLowerCase()
+            .includes(normalized)
+        )
+      : games;
+    return [...filtered].sort(
+      (left, right) =>
+        (right.priority ?? 0) - (left.priority ?? 0) ||
+        left.name.localeCompare(right.name, undefined, { sensitivity: "base" })
+    );
+  }, [games, query]);
+
+  return (
+    <section class="wishlist-section" aria-labelledby="wishlist-title">
+      <div class="wishlist-heading">
+        <div>
+          <span class="eyebrow">Games we’re considering</span>
+          <h2 id="wishlist-title">Wish list & requests</h2>
+          <p>
+            These games are not owned yet, so they stay out of group filters and roulette until they
+            join the shelves.
+          </p>
+        </div>
+        <a class="primary-button" href={requestUrl}>
+          Request a game <span aria-hidden="true">↗</span>
+        </a>
+      </div>
+
+      <div class="wishlist-toolbar">
+        <label class="search-field">
+          <span class="sr-only">Search wish list</span>
+          <input
+            type="search"
+            value={query}
+            onInput={(event) => setQuery(event.currentTarget.value)}
+            placeholder="Search the wish list…"
+          />
+        </label>
+        <label>
+          Suggest a game by name
+          <input
+            value={requestName}
+            onInput={(event) => setRequestName(event.currentTarget.value)}
+            placeholder="Optional prefill"
+          />
+        </label>
+      </div>
+
+      {!games.length ? (
+        <div class="empty-state">
+          <span aria-hidden="true">◇</span>
+          <h2>The wish list is ready for its first suggestion</h2>
+          <p>
+            Open a public GitHub request with the game name and anything that makes it appealing.
+          </p>
+          <a class="secondary-button dark" href={requestUrl}>
+            Suggest the first game
+          </a>
+        </div>
+      ) : !visible.length ? (
+        <div class="empty-state">
+          <span aria-hidden="true">◇</span>
+          <h2>No wish-list game matches that search</h2>
+          <button class="secondary-button dark" onClick={() => setQuery("")}>
+            Clear search
+          </button>
+        </div>
+      ) : (
+        <div class="wishlist-grid">
+          {visible.map((game) => (
+            <article class="wishlist-card" key={game.slug}>
+              <div class="wishlist-cover">
+                {game.metadata.thumbnail ? (
+                  <img
+                    src={game.metadata.thumbnail}
+                    alt=""
+                    loading="lazy"
+                    onError={(event) => {
+                      event.currentTarget.hidden = true;
+                      event.currentTarget.nextElementSibling?.removeAttribute("hidden");
+                    }}
+                  />
+                ) : null}
+                <div class="cover-fallback" hidden={Boolean(game.metadata.thumbnail)}>
+                  <span aria-hidden="true">◇</span>
+                  <strong>{game.name}</strong>
+                </div>
+              </div>
+              <div class="wishlist-card-copy">
+                <div class="wishlist-badges">
+                  <span>{wishlistStatus[game.status]}</span>
+                  {game.priority && <span>Priority {game.priority}/5</span>}
+                </div>
+                <h2>{game.name}</h2>
+                {game.notes && <p>{game.notes}</p>}
+                {game.metadata.url && (
+                  <a href={game.metadata.url} target="_blank" rel="noreferrer">
+                    {game.bggId ? "View on BGG" : "View source"} <span aria-hidden="true">↗</span>
+                  </a>
+                )}
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
 export function App() {
   const [payload, setPayload] = useState<CatalogPayload>();
   const [error, setError] = useState("");
@@ -783,6 +918,7 @@ export function App() {
           {(
             [
               ["library", "Library"],
+              ["wishlist", "Wish list"],
               ["roulette", "Roulette"],
               ["setup", "Setup"],
               ["maintain", "Maintain"]
@@ -835,6 +971,8 @@ export function App() {
         )}
 
         {view === "roulette" && <Roulette games={scored} drawn={drawn} setDrawn={setDrawn} />}
+
+        {view === "wishlist" && <WishlistPanel games={payload?.wishlist ?? []} />}
 
         {view === "maintain" && <Maintenance />}
 

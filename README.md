@@ -9,6 +9,8 @@ The intended site is `https://bahbus.github.io/BoardGameInventory/`.
 ## How it works
 
 - `data/inventory.yaml` is the canonical ownership record.
+- `data/wishlist.yaml` is the canonical list of unowned games under consideration. Wish-list
+  entries are visible but never participate in library filters or roulette.
 - Games absent from BGG use a stable slug, public source URL, and complete local player/time/age
   values. The application never invents a BGG ID.
 - BoardGameGeek metadata is fetched only in trusted GitHub Actions builds and is packaged into
@@ -16,6 +18,8 @@ The intended site is `https://bahbus.github.io/BoardGameInventory/`.
 - The browser performs filtering, scoring, and roulette draws locally.
 - Catalog maintenance forms prefill GitHub Issues. Authorized requests can produce reviewable
   pull requests, but nothing merges automatically.
+- The Wish list view links to a public game-request Issue Form. Maintainers can research the
+  suggestion and add it to the portable YAML list through normal review.
 
 ## Local development
 
@@ -107,6 +111,18 @@ The importer checks every row before replacing `data/inventory.yaml`. Multi-valu
 semicolons. Expansions use `kind=expansion` and identify an imported base game through
 `parent_slug` (preferred) or `parent_bgg_id`. A row without `bgg_id` must provide `source_url`
 and every `override_*` player/time/age field so it remains fully filterable.
+
+## Wish list and game requests
+
+Unowned games live separately in `data/wishlist.yaml`. Each entry has a stable slug, a BGG ID or
+public source URL, a status (`interested`, `researching`, or `planned`), and optional priority and
+notes. The build validates duplicate identities and rejects a wish-list game that is already in
+owned inventory.
+
+Visitors can use the site's **Wish list** view to browse or search candidates and open a public
+GitHub game request. Requests use the `wishlist` label and remain suggestions until a maintainer
+adds a reviewed entry to the YAML file. Moving a purchased game into `data/inventory.yaml` makes
+it eligible for filters and roulette; the build requires removing the matching wish-list entry.
 
 ## GitHub setup
 

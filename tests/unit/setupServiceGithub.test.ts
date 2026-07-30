@@ -170,6 +170,26 @@ describe("GitHub setup gateway", () => {
     expect(deleteRef).not.toHaveBeenCalled();
   });
 
+  it("turns installation-backed questionnaire failures into a safe service error", async () => {
+    const installation = {
+      rest: {
+        repos: {
+          getContent: vi.fn(async () =>
+            Promise.reject(Object.assign(new Error("Bad credentials"), { status: 401 }))
+          )
+        }
+      }
+    } as unknown as Octokit;
+    const gateway = new GitHubSetupGateway(setupServiceConfig(), {
+      installationOctokit: async () => installation
+    });
+
+    await expect(gateway.getQuestionnaire()).rejects.toMatchObject({
+      status: 503,
+      code: "github_inventory_read"
+    } satisfies Partial<ServiceError>);
+  });
+
   it("cleans only its new branch when pull request creation fails", async () => {
     const csv = houseIntakeToCsv([row({ learned: "yes" })]);
     const deleteRef = vi.fn(async () => ({}));

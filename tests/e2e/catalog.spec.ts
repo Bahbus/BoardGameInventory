@@ -82,6 +82,50 @@ test("prefills an authenticated GitHub maintenance request", async ({ page }) =>
   await expect(page.getByRole("button", { name: /Continue securely on GitHub/ })).toBeEnabled();
 });
 
+test("keeps unowned games in a searchable wish list and out of roulette", async ({ page }) => {
+  await page.unroute("**/catalog.json");
+  await page.route("**/catalog.json", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        ...catalogFixture,
+        wishlist: [
+          {
+            slug: "future-game",
+            bggId: 202,
+            name: "Future Game",
+            status: "planned",
+            priority: 5,
+            notes: "Strong two-player candidate.",
+            metadata: {
+              bggId: 202,
+              name: "Future Game",
+              categories: ["Strategy"],
+              mechanics: [],
+              modes: [],
+              playerRecommendations: [],
+              url: "https://boardgamegeek.com/boardgame/202"
+            }
+          }
+        ]
+      })
+    })
+  );
+  await page.reload();
+
+  await page.getByRole("button", { name: "Wish list" }).click();
+  await expect(page.getByRole("heading", { name: "Wish list & requests" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Future Game" })).toBeVisible();
+  await expect(page.getByText("Planning to buy")).toBeVisible();
+  await page.getByRole("searchbox", { name: "Search wish list" }).fill("missing");
+  await expect(
+    page.getByRole("heading", { name: "No wish-list game matches that search" })
+  ).toBeVisible();
+
+  await page.getByRole("button", { name: "Roulette" }).click();
+  await expect(page.getByText("Future Game")).toHaveCount(0);
+});
+
 test("shows a local-only game with its product source and slug-based edit link", async ({
   page
 }) => {
@@ -369,4 +413,23 @@ test("explains failed verification without revealing setup", async ({ page }) =>
     page.getByRole("heading", { name: "We couldn’t verify collaborator access" })
   ).toBeVisible();
   await expect(page.getByRole("heading", { name: "Tell us about the games" })).toHaveCount(0);
+});
+
+test("shows the safe GitHub App recovery message when setup data cannot open", async ({ page }) => {
+  await page.route("**/test-setup-service/api/setup/questionnaire", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      status: 503,
+      body: JSON.stringify({
+        code: "github_installation_auth",
+        message:
+          "GitHub could not open the setup data. Please try again after the App installation is checked."
+      })
+    })
+  );
+  await allowSetup(page);
+
+  await page.getByRole("button", { name: "Setup", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "We couldn’t open game setup" })).toBeVisible();
+  await expect(page.getByText(/App installation is checked/)).toBeVisible();
 });

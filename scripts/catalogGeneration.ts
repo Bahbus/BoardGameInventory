@@ -6,7 +6,8 @@ import type {
   CatalogGame,
   CatalogMetadata,
   CatalogPayload,
-  Inventory
+  Inventory,
+  Wishlist
 } from "../src/types";
 import { fetchBggMetadata } from "./bgg";
 
@@ -26,20 +27,45 @@ const fallbackMetadata = (
 
 export async function buildCatalogPayload({
   inventory,
+  wishlist = { version: 1, games: [] },
   token,
   requireEnrichment = false,
   fetcher = fetch,
   now = () => new Date()
 }: {
   inventory: Inventory;
+  wishlist?: Wishlist;
   token?: string;
   requireEnrichment?: boolean;
   fetcher?: typeof fetch;
   now?: () => Date;
 }): Promise<CatalogPayload> {
-  const ids = inventory.games
-    .flatMap((game) => [game.bggId, ...game.expansions.map((expansion) => expansion.bggId)])
-    .filter((id): id is number => id !== undefined);
+  const ownedSlugs = new Set(
+    inventory.games.flatMap((game) => [
+      game.slug,
+      ...game.expansions.map((expansion) => expansion.slug)
+    ])
+  );
+  const ownedBggIds = new Set(
+    inventory.games
+      .flatMap((game) => [game.bggId, ...game.expansions.map((expansion) => expansion.bggId)])
+      .filter((id): id is number => id !== undefined)
+  );
+  for (const game of wishlist.games) {
+    if (ownedSlugs.has(game.slug)) {
+      throw new Error(`Wishlist slug is already owned: ${game.slug}`);
+    }
+    if (game.bggId !== undefined && ownedBggIds.has(game.bggId)) {
+      throw new Error(`Wishlist BGG ID is already owned: ${game.bggId}`);
+    }
+  }
+  const ids = [
+    ...inventory.games.flatMap((game) => [
+      game.bggId,
+      ...game.expansions.map((expansion) => expansion.bggId)
+    ]),
+    ...wishlist.games.map((game) => game.bggId)
+  ].filter((id): id is number => id !== undefined);
   if (requireEnrichment && ids.length && !token) {
     throw new Error("BGG_API_TOKEN is required to deploy a non-empty enriched catalog.");
   }
@@ -65,7 +91,13 @@ export async function buildCatalogPayload({
     schemaVersion: 1,
     refreshedAt: now().toISOString(),
     enriched,
-    games
+    games,
+    wishlist: wishlist.games.map((game) => ({
+      ...game,
+      metadata:
+        (game.bggId === undefined ? undefined : metadata.get(game.bggId)) ??
+        fallbackMetadata(game.bggId, game.name, game.sourceUrl)
+    }))
   };
 }
 
@@ -79,6 +111,7 @@ export async function writeCatalogPayload(payload: CatalogPayload, output: URL):
 
 export async function generateCatalog(options: {
   inventory: Inventory;
+  wishlist?: Wishlist;
   output: URL;
   token?: string;
   requireEnrichment?: boolean;

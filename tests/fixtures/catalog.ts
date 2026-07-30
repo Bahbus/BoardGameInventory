@@ -4,6 +4,7 @@ export const catalogFixture: CatalogPayload = {
   schemaVersion: 1,
   refreshedAt: new Date().toISOString(),
   enriched: true,
+  wishlist: [],
   games: [
     {
       slug: "forest-council",

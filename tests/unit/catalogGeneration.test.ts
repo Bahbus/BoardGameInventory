@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { describe, expect, it } from "vitest";
 import { buildCatalogPayload, generateCatalog } from "../../scripts/catalogGeneration";
-import type { Inventory } from "../../src/types";
+import type { Inventory, Wishlist } from "../../src/types";
 
 const inventory: Inventory = {
   version: 1,
@@ -23,6 +23,19 @@ const inventory: Inventory = {
         contentFlags: []
       },
       expansions: []
+    }
+  ]
+};
+
+const wishlist: Wishlist = {
+  version: 1,
+  games: [
+    {
+      slug: "future-game",
+      bggId: 202,
+      name: "Future Game",
+      status: "interested",
+      priority: 3
     }
   ]
 };
@@ -46,8 +59,44 @@ describe("catalog generation", () => {
             url: "https://boardgamegeek.com/boardgame/101"
           }
         }
-      ]
+      ],
+      wishlist: []
     });
+  });
+
+  it("builds wish-list metadata without making unowned games part of inventory", async () => {
+    const payload = await buildCatalogPayload({ inventory, wishlist });
+
+    expect(payload.games).toHaveLength(1);
+    expect(payload.wishlist).toEqual([
+      expect.objectContaining({
+        slug: "future-game",
+        status: "interested",
+        metadata: expect.objectContaining({
+          bggId: 202,
+          url: "https://boardgamegeek.com/boardgame/202"
+        })
+      })
+    ]);
+  });
+
+  it("rejects a wish-list item that is already owned", async () => {
+    await expect(
+      buildCatalogPayload({
+        inventory,
+        wishlist: {
+          version: 1,
+          games: [
+            {
+              slug: "other-slug",
+              bggId: 101,
+              name: "Already Owned",
+              status: "interested"
+            }
+          ]
+        }
+      })
+    ).rejects.toThrow(/already owned/);
   });
 
   it("preserves the previous catalog when enrichment fails", async () => {

@@ -63,6 +63,23 @@ export interface Inventory {
   games: InventoryGame[];
 }
 
+export type WishlistStatus = "interested" | "researching" | "planned";
+
+export interface WishlistGame {
+  slug: string;
+  bggId?: number;
+  sourceUrl?: string;
+  name: string;
+  status: WishlistStatus;
+  priority?: number;
+  notes?: string;
+}
+
+export interface Wishlist {
+  version: 1;
+  games: WishlistGame[];
+}
+
 export interface PlayerRecommendation {
   playerCount: number;
   rating: "best" | "recommended" | "not-recommended";
@@ -108,11 +125,16 @@ export interface CatalogGame extends Omit<InventoryGame, "expansions"> {
   };
 }
 
+export interface CatalogWishlistGame extends WishlistGame {
+  metadata: CatalogMetadata;
+}
+
 export interface CatalogPayload {
   schemaVersion: 1;
   refreshedAt: string;
   enriched: boolean;
   games: CatalogGame[];
+  wishlist: CatalogWishlistGame[];
 }
 
 export interface GroupPreferences {

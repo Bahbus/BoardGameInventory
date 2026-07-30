@@ -16,6 +16,18 @@ const fileContentSchema = z.object({
   type: z.literal("file")
 });
 
+const logGitHubFailure = (message: string, error: unknown) => {
+  const details =
+    error instanceof Error
+      ? {
+          name: error.name.slice(0, 100),
+          message: error.message.slice(0, 500),
+          status: "status" in error && typeof error.status === "number" ? error.status : undefined
+        }
+      : { name: "UnknownError" };
+  console.error(message, details);
+};
+
 export interface Questionnaire {
   schemaVersion: 1;
   sourceSha: string;
@@ -151,8 +163,17 @@ export class GitHubSetupGateway implements SetupGateway {
 
   async getQuestionnaire(): Promise<Questionnaire> {
     const octokit = await this.installationOctokit();
-    const current = await this.getHouseFile(octokit);
-    return questionnaireFromCsv(current.sha, current.csv);
+    try {
+      const current = await this.getHouseFile(octokit);
+      return questionnaireFromCsv(current.sha, current.csv);
+    } catch (error) {
+      logGitHubFailure("GitHub App could not read the setup source.", error);
+      throw new ServiceError(
+        503,
+        "GitHub could not open the setup data. Please try again after the App installation is checked.",
+        "github_inventory_read"
+      );
+    }
   }
 
   async submitHouseAnswers({
@@ -263,13 +284,16 @@ export class GitHubSetupGateway implements SetupGateway {
     if (this.dependencies.installationOctokit) {
       return this.dependencies.installationOctokit();
     }
-    const authentication = (await this.app.octokit.auth({
-      type: "installation",
-      installationId: this.config.github.installationId,
-      repositoryIds: [this.config.github.repositoryId],
-      permissions: { contents: "write", pull_requests: "write" }
-    })) as { token: string };
-    return new Octokit({ auth: authentication.token });
+    try {
+      return await this.app.getInstallationOctokit(this.config.github.installationId);
+    } catch (error) {
+      logGitHubFailure("GitHub App installation authentication failed.", error);
+      throw new ServiceError(
+        503,
+        "GitHub could not open the setup data. Please try again after the App installation is checked.",
+        "github_installation_auth"
+      );
+    }
   }
 
   private async getHouseFile(octokit: Octokit) {
