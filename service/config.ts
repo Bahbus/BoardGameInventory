@@ -51,6 +51,22 @@ const splitList = (value: string) => [
   )
 ];
 
+const normalizePrivateKey = (value: string) => {
+  let normalized = value.trim();
+  const surroundingQuote = normalized.at(0);
+  if (
+    (surroundingQuote === '"' || surroundingQuote === "'") &&
+    normalized.at(-1) === surroundingQuote
+  ) {
+    normalized = normalized.slice(1, -1);
+  }
+  return normalized
+    .replaceAll("\\r\\n", "\n")
+    .replaceAll("\\n", "\n")
+    .replaceAll("\r\n", "\n")
+    .trim();
+};
+
 export interface ServiceConfig {
   host: string;
   port: number;
@@ -101,7 +117,7 @@ export function parseServiceConfig(environment: Record<string, string | undefine
       clientId: parsed.SETUP_GITHUB_CLIENT_ID,
       clientSecret: parsed.SETUP_GITHUB_CLIENT_SECRET,
       installationId: parsed.SETUP_GITHUB_INSTALLATION_ID,
-      privateKey: parsed.SETUP_GITHUB_PRIVATE_KEY.replaceAll("\\n", "\n"),
+      privateKey: normalizePrivateKey(parsed.SETUP_GITHUB_PRIVATE_KEY),
       repositoryId: parsed.SETUP_GITHUB_REPOSITORY_ID
     },
     grantTtlSeconds: parsed.SETUP_GRANT_TTL_SECONDS,
