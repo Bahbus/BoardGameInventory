@@ -91,9 +91,11 @@ invalid, the site fails closed and explains that verification is unavailable. Ne
 GitHub token, OAuth secret, or GitHub App private key in a `VITE_` variable; those values are
 embedded in the public browser build.
 
-The verification/submission service is a portable Node application with an OCI `Dockerfile` and
-Compose configuration. See [Setup service deployment](docs/SETUP_SERVICE.md) for the GitHub App
-permissions, secrets, local verification, deployment contract, and production activation steps.
+The verification/submission service is a portable Node application with an OCI `Dockerfile`,
+Compose configuration, and a thin Netlify Functions adapter. See
+[Setup service deployment](docs/SETUP_SERVICE.md) for the GitHub App permissions, secrets, local
+verification, Netlify deployment, provider-neutral deployment contract, and production activation
+steps.
 
 Copy `data/inventory.example.csv`, replace the sample rows, then run:
 

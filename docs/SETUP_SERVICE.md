@@ -12,6 +12,10 @@ The implementation is provider-neutral:
 - environment variables for runtime configuration
 - no database, cookies, proprietary data format, or provider SDK
 
+`netlify/functions/setup.ts` is a thin hosting adapter around the same Express application. The
+Docker and Compose paths remain supported, so moving away from Netlify does not require changing
+the service or its data.
+
 ## Security and repository boundaries
 
 Register a dedicated GitHub App and install it only on `Bahbus/BoardGameInventory`.
@@ -98,6 +102,16 @@ Portable container:
 docker compose up --build
 ```
 
+Netlify-compatible build:
+
+```sh
+npm run netlify:build
+npx netlify-cli@27.0.1 build
+```
+
+The CLI is intentionally not an application dependency. Pinning the current CLI in the command
+keeps deployment tooling out of the service's production dependency tree.
+
 The container runs as an unprivileged user with a read-only filesystem and exposes port `8787`.
 `GET /healthz` is the only unauthenticated data endpoint.
 
@@ -112,6 +126,30 @@ The hosting platform must provide:
 
 If a reverse proxy supplies the real client address, set `TRUST_PROXY_HOPS` to its exact hop count
 after verifying that the proxy overwrites forwarded headers. Leave it at `0` otherwise.
+
+## Deploy on Netlify without a repository integration
+
+Netlify Functions can host the service on the Free plan without installing Netlify's GitHub App.
+This preserves GitHub access through the dedicated, repository-scoped Board Game Inventory Setup
+App only.
+
+1. Create an empty Netlify project, or run `npx netlify-cli@27.0.1 deploy` and select **Create a
+   new project**.
+2. Store the configuration variables above with Functions scope. Mark
+   `SETUP_GITHUB_CLIENT_SECRET`, `SETUP_GITHUB_PRIVATE_KEY`, and `SETUP_SIGNING_SECRET` as secret
+   values using Netlify's Secrets Controller.
+3. Deploy from a committed checkout:
+
+   ```sh
+   npx netlify-cli@27.0.1 deploy --build --prod
+   ```
+
+4. Confirm that `GET /healthz` returns `{"status":"ok"}` and that the root page identifies the
+   service.
+
+The committed `netlify.toml` selects Node.js 24, builds the TypeScript service, bundles the
+function, and rewrites only the health, authorization, and Setup API routes. `.netlify/` is local
+provider state and is ignored by Git.
 
 ## Activate GitHub Pages
 

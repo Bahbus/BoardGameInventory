@@ -9,6 +9,7 @@ export default [
       "build",
       "dist",
       "coverage",
+      ".netlify",
       "playwright-report",
       "test-results",
       "public/catalog.json"
@@ -44,7 +45,12 @@ export default [
     }
   },
   {
-    files: ["service/**/*.ts", "tests/fixtures/setupService.ts", "tests/unit/setupService*.ts"],
+    files: [
+      "service/**/*.ts",
+      "netlify/functions/**/*.ts",
+      "tests/fixtures/setupService.ts",
+      "tests/unit/setupService*.ts"
+    ],
     languageOptions: {
       globals: {
         AbortSignal: "readonly",
