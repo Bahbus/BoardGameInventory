@@ -39,7 +39,7 @@ describe("inventory matching manifest", () => {
     expect(directBggId("https://publisher.example/game")).toBeUndefined();
   });
 
-  it("classifies direct, local-only, pending, and shared-ID rows", async () => {
+  it("classifies the reconciled direct and local-only rows", async () => {
     const manifest = buildMatchingManifest(
       parseIntakeCsv(await readFile("data/inventory.intake.csv", "utf8"))
     );
@@ -47,7 +47,25 @@ describe("inventory matching manifest", () => {
       "matched-from-source"
     );
     expect(manifest.find((row) => row.slug === "buzzed-tower")?.matchStatus).toBe("local-only");
-    expect(manifest.find((row) => row.slug === "wingspan")?.matchStatus).toBe("pending-bgg-search");
+    expect(manifest.find((row) => row.slug === "unsettled-wenora")?.matchStatus).toBe("local-only");
+    expect(manifest.find((row) => row.slug === "unsettled-grakkis")?.matchStatus).toBe(
+      "local-only"
+    );
+    expect(manifest.filter((row) => row.matchStatus === "matched-from-source")).toHaveLength(78);
+    expect(manifest.filter((row) => row.matchStatus === "local-only")).toHaveLength(3);
+    expect(manifest.some((row) => row.matchStatus === "pending-bgg-search")).toBe(false);
+    expect(manifest.find((row) => row.slug === "wingspan")).toMatchObject({
+      matchStatus: "matched-from-source",
+      knownBggId: 266192
+    });
+    expect(manifest.find((row) => row.slug === "one-last-fight")).toMatchObject({
+      matchStatus: "matched-from-source",
+      knownBggId: 463580
+    });
+    expect(manifest.find((row) => row.slug === "one-night-ultimate-super-villains")).toMatchObject({
+      matchStatus: "matched-from-source",
+      knownBggId: 255293
+    });
     expect(manifest.find((row) => row.slug === "dice-throne-season-one")).toMatchObject({
       matchStatus: "matched-from-source",
       knownBggId: 216734

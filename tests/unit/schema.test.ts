@@ -106,6 +106,41 @@ describe("inventory schema", () => {
     ).toThrow(/maxPlayers/);
   });
 
+  it("lets a non-standalone local expansion inherit its base game's filter values", () => {
+    const base = {
+      ...game("base", 10),
+      expansions: [
+        {
+          slug: "bundled-module",
+          sourceUrl: "https://publisher.example/base",
+          name: "Bundled Module",
+          standalone: false
+        }
+      ]
+    };
+
+    expect(parseInventory({ version: 1, games: [base] }).games[0].expansions[0]).toMatchObject({
+      slug: "bundled-module",
+      standalone: false
+    });
+  });
+
+  it("requires complete filter values for a standalone local expansion", () => {
+    const base = {
+      ...game("base", 10),
+      expansions: [
+        {
+          slug: "standalone-module",
+          sourceUrl: "https://publisher.example/standalone",
+          name: "Standalone Module",
+          standalone: true
+        }
+      ]
+    };
+
+    expect(() => parseInventory({ version: 1, games: [base] })).toThrow(/minPlayers/);
+  });
+
   it("allows multiple local-only games while still enforcing unique slugs", () => {
     const local = (slug: string) => ({
       ...game(slug, 10),

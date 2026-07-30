@@ -5,6 +5,12 @@ import { inventoryFromCsv } from "../../scripts/inventoryFromCsv";
 const header =
   "kind,slug,bgg_id,source_url,name,parent_slug,parent_bgg_id,standalone,edition,quantity,shelf,availability,learned,house_rating,setup_minutes,teach_difficulty,table_space,interaction,luck,downtime,modes,moods,accessibility_flags,content_flags,recommendation_notes,override_min_players,override_max_players,override_min_minutes,override_max_minutes,override_min_age";
 
+const row = (values: Record<string, string>) =>
+  header
+    .split(",")
+    .map((field) => values[field] ?? "")
+    .join(",");
+
 describe("CSV inventory import", () => {
   it("accepts the complete example file and attaches expansions by parent slug", async () => {
     const source = await readFile("data/inventory.example.csv", "utf8");
@@ -29,5 +35,24 @@ describe("CSV inventory import", () => {
     const orphan = `${header}\nexpansion,orphan,2,,Orphan,missing,,false,,1,,available,false,,,,,,,,,,,,,,,,,\n`;
 
     expect(() => inventoryFromCsv(orphan)).toThrow(/Row 2: the expansion parent was not imported/);
+  });
+
+  it("lets a non-standalone local expansion inherit its imported parent's filter values", () => {
+    const source = `${header}
+${row({ kind: "game", slug: "base", bgg_id: "1", name: "Base" })}
+${row({
+  kind: "expansion",
+  slug: "bundled-module",
+  source_url: "https://publisher.example/base",
+  name: "Bundled Module",
+  parent_slug: "base",
+  standalone: "false"
+})}
+`;
+
+    expect(inventoryFromCsv(source).games[0].expansions[0]).toMatchObject({
+      slug: "bundled-module",
+      standalone: false
+    });
   });
 });

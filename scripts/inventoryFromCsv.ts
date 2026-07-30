@@ -51,11 +51,15 @@ export function inventoryFromCsv(source: string): Inventory {
     if (bggId === undefined) {
       const missing = [
         ["source_url", row.source_url],
-        ["override_min_players", row.override_min_players],
-        ["override_max_players", row.override_max_players],
-        ["override_min_minutes", row.override_min_minutes],
-        ["override_max_minutes", row.override_max_minutes],
-        ["override_min_age", row.override_min_age]
+        ...(row.kind === "game" || boolean(row.standalone)
+          ? [
+              ["override_min_players", row.override_min_players],
+              ["override_max_players", row.override_max_players],
+              ["override_min_minutes", row.override_min_minutes],
+              ["override_max_minutes", row.override_max_minutes],
+              ["override_min_age", row.override_min_age]
+            ]
+          : [])
       ]
         .filter(([, value]) => !value)
         .map(([field]) => field);

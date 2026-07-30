@@ -45,7 +45,12 @@ const localIdentitySchema = {
 };
 
 const requireLocalDetails = (
-  value: { bggId?: number; sourceUrl?: string; overrides?: Record<string, number | undefined> },
+  value: {
+    bggId?: number;
+    sourceUrl?: string;
+    standalone?: boolean;
+    overrides?: Record<string, number | undefined>;
+  },
   context: z.RefinementCtx
 ) => {
   if (value.bggId !== undefined) return;
@@ -56,6 +61,7 @@ const requireLocalDetails = (
       path: ["sourceUrl"]
     });
   }
+  if (value.standalone === false) return;
   localValues.forEach((field) => {
     if (value.overrides?.[field] === undefined) {
       context.addIssue({
