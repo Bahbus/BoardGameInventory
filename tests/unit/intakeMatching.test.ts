@@ -39,7 +39,7 @@ describe("inventory matching manifest", () => {
     expect(directBggId("https://publisher.example/game")).toBeUndefined();
   });
 
-  it("classifies direct, local-only, pending, and shared-ID rows", async () => {
+  it("classifies the reconciled direct and local-only rows", async () => {
     const manifest = buildMatchingManifest(
       parseIntakeCsv(await readFile("data/inventory.intake.csv", "utf8"))
     );
@@ -47,6 +47,13 @@ describe("inventory matching manifest", () => {
       "matched-from-source"
     );
     expect(manifest.find((row) => row.slug === "buzzed-tower")?.matchStatus).toBe("local-only");
+    expect(manifest.find((row) => row.slug === "unsettled-wenora")?.matchStatus).toBe("local-only");
+    expect(manifest.find((row) => row.slug === "unsettled-grakkis")?.matchStatus).toBe(
+      "local-only"
+    );
+    expect(manifest.filter((row) => row.matchStatus === "matched-from-source")).toHaveLength(78);
+    expect(manifest.filter((row) => row.matchStatus === "local-only")).toHaveLength(3);
+    expect(manifest.some((row) => row.matchStatus === "pending-bgg-search")).toBe(false);
     expect(manifest.find((row) => row.slug === "wingspan")).toMatchObject({
       matchStatus: "matched-from-source",
       knownBggId: 266192

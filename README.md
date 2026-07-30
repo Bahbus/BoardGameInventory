@@ -57,11 +57,11 @@ npm run inventory:prepare
 
 This writes `data/inventory.matching.csv`, assigning stable slugs and parent slugs, extracting
 IDs only from direct BGG item links, preserving local-only sources, and flagging shared IDs for
-manual review. The pre-token reconciliation currently identifies 66 of 81 ownership rows from
-direct BGG item links, preserves Buzzed Tower as local-only, and leaves 14 Unsettled modules
-represented by the base game's shared expansions page for API-assisted or manual review. Once the
-token is available, generate a candidate report without modifying the manifest or canonical
-inventory:
+manual review. The pre-token reconciliation identifies 78 of 81 ownership rows from direct BGG
+item links. Buzzed Tower remains a local-only game, while Unsettled's bundled Wenora and Grakkis
+planet modules use the publisher's product page and inherit the Framework's metadata because BGG
+does not list them separately. Once the token is available, generate a candidate report without
+modifying the manifest or canonical inventory:
 
 ```sh
 BGG_API_TOKEN=... npm run inventory:match

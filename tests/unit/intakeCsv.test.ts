@@ -45,12 +45,22 @@ describe("resolved inventory intake CSV", () => {
     const rows = csvRecords(await readFile(intakePath, "utf8"));
     const titles = new Set(rows.map((row) => row.proposed_title));
 
-    for (let planet = 1; planet <= 9; planet += 1) {
-      expect(titles.has(`Unsettled: Planet ${String(planet).padStart(3, "0")}`)).toBe(true);
-    }
-    expect(titles).toContain("Unsettled: Scientific Fascination");
-    expect(titles).toContain("Unsettled: Scientific Specialization");
-    expect(titles).toContain("Unsettled: Luna's");
+    expect([...titles]).toEqual(
+      expect.arrayContaining([
+        "Unsettled: Wenora",
+        "Unsettled: Grakkis",
+        "Unsettled: Zehronn",
+        "Unsettled: Yendraal",
+        "Unsettled: Strannos",
+        "Unsettled: Kaelyfos",
+        "Unsettled: Koguya",
+        "Unsettled: Blackout",
+        "Unsettled: Gniir"
+      ])
+    );
+    expect(titles).toContain("Unsettled: Scientific Fascinations");
+    expect(titles).toContain("Unsettled: Scientific Specializations");
+    expect(titles).toContain("Unsettled: Luna's Synthesizer");
     expect(titles).toContain("Unsettled: Survival Task Pack 1");
     expect(titles).toContain("Unsettled: Survival Task Pack 2");
     expect(titles).toContain("Dice Throne: Season One");
