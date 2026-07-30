@@ -51,9 +51,14 @@ describe("inventory matching manifest", () => {
       matchStatus: "matched-from-source",
       knownBggId: 266192
     });
-    expect(manifest.find((row) => row.slug === "one-last-fight")?.matchStatus).toBe(
-      "pending-bgg-search"
-    );
+    expect(manifest.find((row) => row.slug === "one-last-fight")).toMatchObject({
+      matchStatus: "matched-from-source",
+      knownBggId: 463580
+    });
+    expect(manifest.find((row) => row.slug === "one-night-ultimate-super-villains")).toMatchObject({
+      matchStatus: "matched-from-source",
+      knownBggId: 255293
+    });
     expect(manifest.find((row) => row.slug === "dice-throne-season-one")).toMatchObject({
       matchStatus: "matched-from-source",
       knownBggId: 216734
