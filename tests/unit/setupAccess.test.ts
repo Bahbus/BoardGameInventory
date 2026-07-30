@@ -1,9 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  beginSetupVerification,
   clearSetupAccessSession,
   parseSetupServiceUrl,
   readSetupAccessSession,
   storeSetupAccessSession,
+  submitHouseAnswers,
   verifySetupAccess
 } from "../../src/lib/setupAccess";
 
@@ -90,5 +92,74 @@ describe("setup collaborator access", () => {
         fetcher
       )
     ).rejects.toThrow(/could not confirm collaborator access/i);
+  });
+
+  it("starts GitHub verification with PKCE and a hashed nonce", async () => {
+    const values = new Map<string, string>();
+    const location = {
+      assigned: "",
+      origin: "https://bahbus.github.io",
+      pathname: "/BoardGameInventory/",
+      assign(value: string) {
+        this.assigned = value;
+      }
+    };
+    await beginSetupVerification(new URL("https://auth.example.test/"), location, {
+      setItem(key, value) {
+        values.set(key, value);
+      }
+    });
+    const target = new URL(location.assigned);
+    expect(target.origin).toBe("https://auth.example.test");
+    expect(target.searchParams.get("callback")).toBe(
+      "https://bahbus.github.io/BoardGameInventory/"
+    );
+    expect(target.searchParams.get("code_challenge")).toMatch(/^[A-Za-z0-9_-]{43}$/);
+    expect(target.searchParams.get("nonce_hash")).toMatch(/^[A-Za-z0-9_-]{43}$/);
+    expect([...values.values()]).toHaveLength(2);
+    expect(target.href).not.toContain([...values.values()][0]);
+  });
+
+  it("accepts only the expected repository pull request response", async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          pullRequestNumber: 42,
+          pullRequestUrl: "https://github.com/Bahbus/BoardGameInventory/pull/42"
+        }),
+        { status: 201 }
+      )
+    );
+    await expect(
+      submitHouseAnswers(
+        new URL("https://auth.example.test/"),
+        "grant",
+        "csv",
+        "a".repeat(40),
+        fetcher
+      )
+    ).resolves.toEqual({
+      pullRequestNumber: 42,
+      pullRequestUrl: "https://github.com/Bahbus/BoardGameInventory/pull/42"
+    });
+
+    fetcher.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          pullRequestNumber: 42,
+          pullRequestUrl: "https://attacker.example/pull/42"
+        }),
+        { status: 201 }
+      )
+    );
+    await expect(
+      submitHouseAnswers(
+        new URL("https://auth.example.test/"),
+        "grant",
+        "csv",
+        "a".repeat(40),
+        fetcher
+      )
+    ).rejects.toThrow(/unexpected pull request URL/i);
   });
 });

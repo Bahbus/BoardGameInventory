@@ -34,14 +34,15 @@ const answer = (overrides: Partial<HouseAnswer> = {}): HouseAnswer => ({
   localMinAge: "",
   ...overrides
 });
+const sourceSha = "a".repeat(40);
 
 describe("browser house editor", () => {
   it("validates the generated dataset and rejects duplicate slugs", () => {
-    expect(parseHouseEditorDataset({ schemaVersion: 1, games: [answer()] }).games[0].title).toBe(
-      "Example Game"
-    );
+    expect(
+      parseHouseEditorDataset({ schemaVersion: 1, sourceSha, games: [answer()] }).games[0].title
+    ).toBe("Example Game");
     expect(() =>
-      parseHouseEditorDataset({ schemaVersion: 1, games: [answer(), answer()] })
+      parseHouseEditorDataset({ schemaVersion: 1, sourceSha, games: [answer(), answer()] })
     ).toThrow(/repeats example-game/);
   });
 

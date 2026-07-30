@@ -19,7 +19,7 @@ The intended site is `https://bahbus.github.io/BoardGameInventory/`.
 
 ## Local development
 
-Requires Node.js 22 or newer.
+Requires the Node.js 24 LTS release line.
 
 ```sh
 npm install
@@ -66,9 +66,9 @@ never accepts a candidate automatically.
 House-specific information can be collected independently of BGG. The intended owner workflow
 is the site's **Setup** screen. Setup remains completely locked until the separate GitHub
 verification service confirms that the signed-in account is a repository collaborator. Once
-verified, it presents one game at a time, saves progress only in that browser, supports JSON
-backup and restore between devices, and downloads the finished answers as an open CSV file for
-repository import. The owner never needs to edit CSV directly.
+verified, it presents one game at a time, saves progress in that browser, supports open JSON
+backup and CSV download, and submits completed answers to a new branch and pull request. It never
+writes to `main` or merges automatically.
 
 Regenerate the browser questionnaire after changing the matching manifest:
 
@@ -78,17 +78,22 @@ npm run house-editor:build
 ```
 
 The first command creates the version-controlled `data/inventory.house.csv` source with one row
-per selectable game. The second validates that source and creates
-`outputs/house-intake.json` for the private verification service. It is never packaged in the
-public GitHub Pages artifact. Setup collects learned state, shelf label, ratings, setup and
-teaching burden, table space, interaction, luck, downtime, modes, moods, accessibility, content,
-and recommendation notes. Local-only games also require player-count, duration, and minimum-age
+per selectable game. The second validates that source and creates a local inspection artifact in
+`outputs/house-intake.json`; it is never packaged in the public GitHub Pages artifact. The live
+service reads the current file from `main`, ties the questionnaire to its Git blob SHA, and
+rejects stale submissions. Setup collects learned state, shelf label, ratings, setup and teaching
+burden, table space, interaction, luck, downtime, modes, moods, accessibility, content, and
+recommendation notes. Local-only games also require player-count, duration, and minimum-age
 answers so they remain fully filterable.
 
 Set the public service URL at build time using `VITE_SETUP_SERVICE_URL`. If it is absent or
 invalid, the site fails closed and explains that verification is unavailable. Never place a
 GitHub token, OAuth secret, or GitHub App private key in a `VITE_` variable; those values are
 embedded in the public browser build.
+
+The verification/submission service is a portable Node application with an OCI `Dockerfile` and
+Compose configuration. See [Setup service deployment](docs/SETUP_SERVICE.md) for the GitHub App
+permissions, secrets, local verification, deployment contract, and production activation steps.
 
 Copy `data/inventory.example.csv`, replace the sample rows, then run:
 

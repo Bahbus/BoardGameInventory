@@ -9,6 +9,11 @@ import {
   type HouseAnswer,
   type SavedHouseProgress
 } from "./lib/houseEditor";
+import {
+  SetupVerificationError,
+  submitHouseAnswers,
+  type SetupSubmission
+} from "./lib/setupAccess";
 
 const STORAGE_KEY = "board-game-inventory:house-progress:v1";
 
@@ -79,10 +84,13 @@ export function HouseEditor({
   onVerificationLost: () => void;
 }) {
   const [sourceGames, setSourceGames] = useState<HouseAnswer[]>([]);
+  const [sourceSha, setSourceSha] = useState("");
   const [progress, setProgress] = useState<SavedHouseProgress>(readProgress);
   const [index, setIndex] = useState(0);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [submission, setSubmission] = useState<SetupSubmission>();
 
   useEffect(() => {
     fetch(new URL("api/setup/questionnaire", serviceUrl), {
@@ -96,7 +104,11 @@ export function HouseEditor({
         if (!response.ok) throw new Error("The setup questionnaire could not be loaded.");
         return response.json() as Promise<unknown>;
       })
-      .then((value) => setSourceGames(parseHouseEditorDataset(value).games))
+      .then((value) => {
+        const dataset = parseHouseEditorDataset(value);
+        setSourceSha(dataset.sourceSha);
+        setSourceGames(dataset.games);
+      })
       .catch((cause: Error) => setError(cause.message));
   }, [grant, onVerificationLost, serviceUrl]);
 
@@ -169,6 +181,29 @@ export function HouseEditor({
     }
   };
 
+  const submit = async () => {
+    if (completed.size !== games.length || !sourceSha) return;
+    setSubmitting(true);
+    setNotice("");
+    try {
+      const result = await submitHouseAnswers(
+        serviceUrl,
+        grant,
+        `${houseAnswersToCsv(games)}\n`,
+        sourceSha
+      );
+      setSubmission(result);
+    } catch (cause) {
+      if (cause instanceof SetupVerificationError) {
+        onVerificationLost();
+        return;
+      }
+      setNotice(cause instanceof Error ? cause.message : "The setup answers could not be saved.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   if (error) {
     return (
       <section class="setup-shell">
@@ -233,7 +268,7 @@ export function HouseEditor({
               )
             }
           >
-            Download answers
+            Download CSV copy
           </button>
           <button
             class="text-button"
@@ -260,9 +295,22 @@ export function HouseEditor({
 
       {completed.size === games.length && (
         <div class="setup-complete" role="status">
-          <strong>Every game has a completed answer.</strong>
-          Download the answers and send that file to the inventory maintainer. Nothing is submitted
-          automatically.
+          {submission ? (
+            <>
+              <strong>Setup answers are ready for review.</strong>
+              <a href={submission.pullRequestUrl} target="_blank" rel="noreferrer">
+                Open pull request #{submission.pullRequestNumber} on GitHub
+              </a>
+            </>
+          ) : (
+            <>
+              <strong>Every game has a completed answer.</strong>
+              <span>Save them to a new GitHub branch and pull request for review.</span>
+              <button class="primary-button" disabled={submitting} onClick={() => void submit()}>
+                {submitting ? "Saving to GitHub…" : "Save to GitHub"}
+              </button>
+            </>
+          )}
         </div>
       )}
 

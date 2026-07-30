@@ -52,6 +52,7 @@ export interface HouseAnswer {
 
 export interface HouseEditorDataset {
   schemaVersion: 1;
+  sourceSha: string;
   games: HouseAnswer[];
 }
 
@@ -95,6 +96,9 @@ export function parseHouseEditorDataset(value: unknown): HouseEditorDataset {
     value === null ||
     !("schemaVersion" in value) ||
     value.schemaVersion !== 1 ||
+    !("sourceSha" in value) ||
+    typeof value.sourceSha !== "string" ||
+    !/^[a-f0-9]{40}$/.test(value.sourceSha) ||
     !("games" in value) ||
     !Array.isArray(value.games)
   ) {
@@ -118,7 +122,7 @@ export function parseHouseEditorDataset(value: unknown): HouseEditorDataset {
     slugs.add(candidate.slug);
     return candidate as unknown as HouseAnswer;
   });
-  return { schemaVersion: 1, games };
+  return { schemaVersion: 1, sourceSha: value.sourceSha, games };
 }
 
 export function mergeHouseProgress(
