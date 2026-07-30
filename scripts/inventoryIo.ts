@@ -1,4 +1,4 @@
-import { readFile, writeFile } from "node:fs/promises";
+import { readFile, rename, writeFile } from "node:fs/promises";
 import YAML from "yaml";
 import { parseInventory, parseWishlist } from "../src/lib/schema";
 import type { Inventory, Wishlist } from "../src/types";
@@ -11,13 +11,19 @@ export async function readInventory(path = INVENTORY_PATH): Promise<Inventory> {
   return parseInventory(YAML.parse(source));
 }
 
-export async function writeInventory(inventory: Inventory, path = INVENTORY_PATH) {
+export function serializeInventory(inventory: Inventory): string {
   const validated = parseInventory(inventory);
-  const source = YAML.stringify(validated, {
+  return YAML.stringify(validated, {
     lineWidth: 0,
     sortMapEntries: false
   });
-  await writeFile(path, source, "utf8");
+}
+
+export async function writeInventory(inventory: Inventory, path = INVENTORY_PATH) {
+  const source = serializeInventory(inventory);
+  const temporary = new URL(`${path.href}.tmp`);
+  await writeFile(temporary, source, "utf8");
+  await rename(temporary, path);
 }
 
 export async function readWishlist(path = WISHLIST_PATH): Promise<Wishlist> {

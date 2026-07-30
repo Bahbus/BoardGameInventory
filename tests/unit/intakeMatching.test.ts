@@ -68,7 +68,9 @@ describe("inventory matching manifest", () => {
     });
     expect(manifest.find((row) => row.slug === "dice-throne-season-one")).toMatchObject({
       matchStatus: "matched-from-source",
-      knownBggId: 216734
+      knownBggId: 216734,
+      quantity: 1,
+      standalone: false
     });
   });
 

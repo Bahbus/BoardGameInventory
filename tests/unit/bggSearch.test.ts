@@ -25,6 +25,8 @@ const pending = (title: string): MatchingRow => ({
   parentSlug: "",
   proposedTitle: title,
   editionOrOwnedDetail: "",
+  quantity: 1,
+  standalone: false,
   sourceUrl: "",
   matchStatus: "pending-bgg-search",
   intakeNotes: "",

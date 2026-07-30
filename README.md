@@ -57,11 +57,12 @@ npm run inventory:prepare
 
 This writes `data/inventory.matching.csv`, assigning stable slugs and parent slugs, extracting
 IDs only from direct BGG item links, preserving local-only sources, and flagging shared IDs for
-manual review. The pre-token reconciliation identifies 78 of 81 ownership rows from direct BGG
-item links. Buzzed Tower remains a local-only game, while Unsettled's bundled Wenora and Grakkis
-planet modules use the publisher's product page and inherit the Framework's metadata because BGG
-does not list them separately. Once the token is available, generate a candidate report without
-modifying the manifest or canonical inventory:
+manual review. The manifest also records quantity and whether an expansion is independently
+playable; review those authored values before finalization. The pre-token reconciliation identifies
+78 of 81 ownership rows from direct BGG item links. Buzzed Tower remains a local-only game, while
+Unsettled's bundled Wenora and Grakkis planet modules use the publisher's product page and inherit
+the Framework's metadata because BGG does not list them separately. Once the token is available,
+generate a candidate report without modifying the manifest or canonical inventory:
 
 ```sh
 BGG_API_TOKEN=... npm run inventory:match
@@ -96,6 +97,41 @@ notes. Competitive, cooperative, team, and solo support normally come from BGG e
 non-empty authored mode list is a full house override when BGG needs correcting. Local-only games
 ask for modes as well as player-count, duration, and minimum-age answers so they remain fully
 filterable.
+
+### Finalize the canonical inventory
+
+The matching manifest and guided Setup answers remain reviewable source records. They do not
+change `data/inventory.yaml` automatically. After Setup is complete, validate the complete
+conversion without writing anything:
+
+```sh
+npm run inventory:finalize:check
+```
+
+Inspect the exact deterministic YAML on standard output if desired:
+
+```sh
+npm run inventory:finalize:preview
+```
+
+Only after reviewing both inputs and the preview, replace the canonical inventory explicitly:
+
+```sh
+npm run inventory:finalize
+npm run inventory:validate
+```
+
+Finalization rejects unresolved or duplicate identities, mismatched Setup rows, incomplete local
+metadata, invalid parent relationships, quantities, modes, enumerations, and ranges. BGG-linked
+games keep authored modes blank unless the house intentionally overrides BGG. Owned expansions
+inherit their base game's shelf, availability, and learned state during the initial conversion.
+Non-standalone local expansions may inherit base metadata; a local standalone item must instead be
+modeled as a selectable base game so Setup can collect complete filter values.
+
+The write is validation-first and atomic: a failure leaves the existing `data/inventory.yaml`
+untouched. Correct the reported row in the matching or house CSV and rerun the check. Do not merge
+the populated canonical inventory until `BGG_API_TOKEN` is available, because trusted production
+deployments intentionally require enrichment for a non-empty BGG-linked collection.
 
 Set the public service URL at build time using `VITE_SETUP_SERVICE_URL`. If it is absent or
 invalid, the site fails closed and explains that verification is unavailable. Never place a

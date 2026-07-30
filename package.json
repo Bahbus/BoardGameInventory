@@ -29,6 +29,9 @@
     "inventory:import": "node --import tsx scripts/importCsv.ts",
     "inventory:prepare": "node --import tsx scripts/prepareMatchingManifest.ts",
     "inventory:prepare-house": "node --import tsx scripts/prepareHouseIntake.ts",
+    "inventory:finalize:check": "node --import tsx scripts/finalizeInventory.ts --check",
+    "inventory:finalize:preview": "node --import tsx scripts/finalizeInventory.ts --preview",
+    "inventory:finalize": "node --import tsx scripts/finalizeInventory.ts --write",
     "inventory:match": "node --import tsx scripts/matchInventory.ts",
     "request:apply": "node --import tsx scripts/applyIssueRequest.ts"
   },
