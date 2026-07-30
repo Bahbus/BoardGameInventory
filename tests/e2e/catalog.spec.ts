@@ -7,6 +7,7 @@ const setupSession = {
   login: "Bahbus",
   expiresAt: "2099-01-01T00:00:00.000Z"
 };
+const setupSourceSha = "a".repeat(40);
 
 const setupGame = {
   slug: "accessible-game",
@@ -267,7 +268,17 @@ test("guides house answers one game at a time and keeps progress locally", async
   await page.route("**/test-setup-service/api/setup/questionnaire", (route) =>
     route.fulfill({
       contentType: "application/json",
-      body: JSON.stringify({ schemaVersion: 1, games: setupGames })
+      body: JSON.stringify({ schemaVersion: 1, sourceSha: setupSourceSha, games: setupGames })
+    })
+  );
+  await page.route("**/test-setup-service/api/setup/submit", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      status: 201,
+      body: JSON.stringify({
+        pullRequestNumber: 42,
+        pullRequestUrl: "https://github.com/Bahbus/BoardGameInventory/pull/42"
+      })
     })
   );
   await allowSetup(page);
@@ -291,9 +302,14 @@ test("guides house answers one game at a time and keeps progress locally", async
   await page.getByRole("button", { name: "Save game" }).click();
   await expect(page.getByText("2 of 2", { exact: true })).toBeVisible();
   await expect(page.getByText("Every game has a completed answer.")).toBeVisible();
+  await page.getByRole("button", { name: "Save to GitHub" }).click();
+  await expect(page.getByRole("link", { name: "Open pull request #42 on GitHub" })).toHaveAttribute(
+    "href",
+    "https://github.com/Bahbus/BoardGameInventory/pull/42"
+  );
 
   const downloadPromise = page.waitForEvent("download");
-  await page.getByRole("button", { name: "Download answers" }).click();
+  await page.getByRole("button", { name: "Download CSV copy" }).click();
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toBe("inventory-house-answers.csv");
 
@@ -308,7 +324,11 @@ test("keeps the guided setup screen free of detectable accessibility violations"
   await page.route("**/test-setup-service/api/setup/questionnaire", (route) =>
     route.fulfill({
       contentType: "application/json",
-      body: JSON.stringify({ schemaVersion: 1, games: [setupGame] })
+      body: JSON.stringify({
+        schemaVersion: 1,
+        sourceSha: setupSourceSha,
+        games: [setupGame]
+      })
     })
   );
   await allowSetup(page);

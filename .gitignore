@@ -1,5 +1,6 @@
 node_modules/
 dist/
+build/
 coverage/
 playwright-report/
 test-results/
@@ -8,4 +9,5 @@ public/catalog.json
 public/house-intake.json
 lighthouse-report.json
 .env
+.env.service
 .DS_Store

@@ -1,0 +1,11 @@
+.env
+.env.*
+.git
+build
+coverage
+dist
+lighthouse-report.json
+node_modules
+outputs
+playwright-report
+test-results

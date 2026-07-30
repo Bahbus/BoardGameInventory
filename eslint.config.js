@@ -4,7 +4,16 @@ import tsparser from "@typescript-eslint/parser";
 import prettier from "eslint-config-prettier";
 
 export default [
-  { ignores: ["dist", "coverage", "playwright-report", "test-results", "public/catalog.json"] },
+  {
+    ignores: [
+      "build",
+      "dist",
+      "coverage",
+      "playwright-report",
+      "test-results",
+      "public/catalog.json"
+    ]
+  },
   js.configs.recommended,
   {
     files: ["**/*.ts", "**/*.tsx"],
@@ -20,6 +29,8 @@ export default [
         URLSearchParams: "readonly",
         fetch: "readonly",
         Response: "readonly",
+        TextEncoder: "readonly",
+        btoa: "readonly",
         navigator: "readonly",
         console: "readonly",
         process: "readonly",
@@ -30,6 +41,15 @@ export default [
     rules: {
       ...tseslint.configs.recommended.rules,
       "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }]
+    }
+  },
+  {
+    files: ["service/**/*.ts", "tests/fixtures/setupService.ts", "tests/unit/setupService*.ts"],
+    languageOptions: {
+      globals: {
+        AbortSignal: "readonly",
+        Buffer: "readonly"
+      }
     }
   },
   {

@@ -8,7 +8,7 @@ import {
   readSetupAccessSession,
   removeSetupAuthQuery,
   storeSetupAccessSession,
-  takeSetupAuthNonce,
+  takeSetupAuthValues,
   verifySetupAccess,
   type SetupAccessSession
 } from "./lib/setupAccess";
@@ -64,9 +64,9 @@ export function SetupAccessGate() {
       const code = query.get("code");
       const oauthState = query.get("state");
       if (code || oauthState) {
-        const nonce = takeSetupAuthNonce();
+        const authValues = takeSetupAuthValues();
         removeSetupAuthQuery();
-        if (!code || !oauthState || !nonce) {
+        if (!code || !oauthState || !authValues) {
           setState({
             kind: "failed",
             message: "The GitHub verification response was incomplete. Please try again."
@@ -74,7 +74,13 @@ export function SetupAccessGate() {
           return;
         }
         try {
-          const session = await exchangeSetupCode(serviceUrl, code, oauthState, nonce);
+          const session = await exchangeSetupCode(
+            serviceUrl,
+            code,
+            oauthState,
+            authValues.nonce,
+            authValues.codeVerifier
+          );
           storeSetupAccessSession(session);
           allow(session);
         } catch (cause) {
@@ -165,7 +171,7 @@ export function SetupAccessGate() {
             <p role="alert">{state.message}</p>
             <button
               class="primary-button"
-              onClick={() => serviceUrl && beginSetupVerification(serviceUrl)}
+              onClick={() => serviceUrl && void beginSetupVerification(serviceUrl)}
             >
               Try GitHub verification again
             </button>
@@ -179,7 +185,7 @@ export function SetupAccessGate() {
             </p>
             <button
               class="primary-button"
-              onClick={() => serviceUrl && beginSetupVerification(serviceUrl)}
+              onClick={() => serviceUrl && void beginSetupVerification(serviceUrl)}
             >
               Verify with GitHub
             </button>

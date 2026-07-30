@@ -1,9 +1,19 @@
+import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { validateHouseIntakeCsv } from "./houseIntake";
 
 const source = await readFile(new URL("../data/inventory.house.csv", import.meta.url), "utf8");
 const games = validateHouseIntakeCsv(source);
+const sourceBytes = new TextEncoder().encode(source);
+const sourceSha = createHash("sha1")
+  .update(`blob ${sourceBytes.length}\0`)
+  .update(sourceBytes)
+  .digest("hex");
 const output = new URL("../outputs/house-intake.json", import.meta.url);
 await mkdir(new URL("../outputs/", import.meta.url), { recursive: true });
-await writeFile(output, `${JSON.stringify({ schemaVersion: 1, games }, null, 2)}\n`, "utf8");
+await writeFile(
+  output,
+  `${JSON.stringify({ schemaVersion: 1, sourceSha, games }, null, 2)}\n`,
+  "utf8"
+);
 console.log(`Generated private setup-service questionnaire for ${games.length} games.`);
