@@ -26,6 +26,16 @@ describe("setup service configuration", () => {
     expect(config.github.privateKey).toContain("\ntest\n");
   });
 
+  it.each(['"', "'"])("normalizes a %s-wrapped multiline private key", (quote) => {
+    const config = parseServiceConfig({
+      ...environment,
+      SETUP_GITHUB_PRIVATE_KEY: `${quote}${environment.SETUP_GITHUB_PRIVATE_KEY}${quote}`
+    });
+    expect(config.github.privateKey).toBe(
+      "-----BEGIN RSA PRIVATE KEY-----\ntest\n-----END RSA PRIVATE KEY-----"
+    );
+  });
+
   it("rejects non-HTTPS production origins and unlisted callback origins", () => {
     expect(() =>
       parseServiceConfig({ ...environment, SETUP_ALLOWED_ORIGINS: "http://example.test" })
