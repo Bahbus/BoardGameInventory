@@ -135,7 +135,7 @@ App only.
 
 1. Create an empty Netlify project, or run `npx netlify-cli@27.0.1 deploy` and select **Create a
    new project**.
-2. Store the configuration variables above with Functions scope. Mark
+2. Store the configuration variables above for the production deploy context. Mark
    `SETUP_GITHUB_CLIENT_SECRET`, `SETUP_GITHUB_PRIVATE_KEY`, and `SETUP_SIGNING_SECRET` as secret
    values using Netlify's Secrets Controller.
 3. Deploy from a committed checkout:
@@ -150,6 +150,12 @@ App only.
 The committed `netlify.toml` selects Node.js 24, builds the TypeScript service, bundles the
 function, and rewrites only the health, authorization, and Setup API routes. `.netlify/` is local
 provider state and is ignored by Git.
+
+Netlify Free does not allow custom per-variable scopes. Its secret preset makes secret values
+available to Builds, Functions, and Runtime while excluding post-processing. Keep this project
+disconnected from Git providers and deploy only reviewed commits from a trusted checkout so
+untrusted pull requests cannot execute a build with those values. If a future Netlify plan enables
+custom scopes, restrict all Setup variables to Functions.
 
 ## Activate GitHub Pages
 
