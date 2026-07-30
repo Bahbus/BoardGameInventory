@@ -50,6 +50,22 @@ describe("guided setup submissions", () => {
     expect(result.csv).toBe(submitted);
   });
 
+  it("accepts alphabetized browser rows while preserving canonical source order", () => {
+    const source = houseIntakeToCsv([
+      row({ slug: "zulu", title: "Zulu" }),
+      row({ slug: "alpha", title: "Alpha" })
+    ]);
+    const result = validateHouseSubmission(
+      source,
+      houseIntakeToCsv([
+        row({ slug: "alpha", title: "Alpha", learned: "yes" }),
+        row({ slug: "zulu", title: "Zulu", learned: "no" })
+      ])
+    );
+
+    expect(result.rows.map((answer) => answer.slug)).toEqual(["zulu", "alpha"]);
+  });
+
   it("rejects protected identity changes and incomplete local-only games", () => {
     const current = houseIntakeToCsv([
       row({

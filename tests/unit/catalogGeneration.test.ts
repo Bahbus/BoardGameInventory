@@ -50,6 +50,7 @@ describe("catalog generation", () => {
     expect(payload).toMatchObject({
       refreshedAt: "2026-01-02T03:04:05.000Z",
       enriched: false,
+      setupRequired: true,
       games: [
         {
           slug: "linked-game",
@@ -65,9 +66,10 @@ describe("catalog generation", () => {
   });
 
   it("builds wish-list metadata without making unowned games part of inventory", async () => {
-    const payload = await buildCatalogPayload({ inventory, wishlist });
+    const payload = await buildCatalogPayload({ inventory, wishlist, setupRequired: false });
 
     expect(payload.games).toHaveLength(1);
+    expect(payload.setupRequired).toBe(false);
     expect(payload.wishlist).toEqual([
       expect.objectContaining({
         slug: "future-game",

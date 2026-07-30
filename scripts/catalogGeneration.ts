@@ -28,6 +28,7 @@ const fallbackMetadata = (
 export async function buildCatalogPayload({
   inventory,
   wishlist = { version: 1, games: [] },
+  setupRequired = true,
   token,
   requireEnrichment = false,
   fetcher = fetch,
@@ -35,6 +36,7 @@ export async function buildCatalogPayload({
 }: {
   inventory: Inventory;
   wishlist?: Wishlist;
+  setupRequired?: boolean;
   token?: string;
   requireEnrichment?: boolean;
   fetcher?: typeof fetch;
@@ -91,6 +93,7 @@ export async function buildCatalogPayload({
     schemaVersion: 1,
     refreshedAt: now().toISOString(),
     enriched,
+    setupRequired,
     games,
     wishlist: wishlist.games.map((game) => ({
       ...game,
@@ -112,6 +115,7 @@ export async function writeCatalogPayload(payload: CatalogPayload, output: URL):
 export async function generateCatalog(options: {
   inventory: Inventory;
   wishlist?: Wishlist;
+  setupRequired?: boolean;
   output: URL;
   token?: string;
   requireEnrichment?: boolean;

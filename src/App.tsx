@@ -859,9 +859,10 @@ function WishlistPanel({ games }: { games: CatalogWishlistGame[] }) {
 }
 
 export function App() {
+  const setupAuthCallback = isSetupAuthCallback();
   const [payload, setPayload] = useState<CatalogPayload>();
   const [error, setError] = useState("");
-  const [view, setView] = useState<View>(() => (isSetupAuthCallback() ? "setup" : "library"));
+  const [view, setView] = useState<View>(() => (setupAuthCallback ? "setup" : "library"));
   const [preferences, setPreferences] = useState<GroupPreferences>(initialPreferences);
   const [drawn, setDrawnState] = useState<string[]>(() => {
     try {
@@ -880,6 +881,12 @@ export function App() {
       .then(setPayload)
       .catch((cause: Error) => setError(cause.message));
   }, []);
+
+  useEffect(() => {
+    if (payload && !payload.setupRequired && !setupAuthCallback && view === "setup") {
+      setView("library");
+    }
+  }, [payload, setupAuthCallback, view]);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(preferences));
@@ -918,9 +925,11 @@ export function App() {
           {(
             [
               ["library", "Library"],
-              ["wishlist", "Wish list"],
               ["roulette", "Roulette"],
-              ["setup", "Setup"],
+              ["wishlist", "Wish list"],
+              ...(payload?.setupRequired !== false || setupAuthCallback
+                ? ([["setup", "Setup"]] as const)
+                : []),
               ["maintain", "Maintain"]
             ] as const
           ).map(([value, label]) => (

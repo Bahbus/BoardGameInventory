@@ -172,7 +172,8 @@ After deploying the service:
 5. Verify that a non-collaborator receives the rejection screen.
 6. Verify that a collaborator can complete Setup and receives a pull-request link.
 7. Review and merge that pull request manually.
-8. Confirm GitHub deletes `inventory/house-setup` after merge, or delete that merged branch through
+8. Confirm the next Pages build hides Setup because all required house answers are complete.
+9. Confirm GitHub deletes `inventory/house-setup` after merge, or delete that merged branch through
    GitHub before starting another Setup submission.
 
 If verification succeeds but the questionnaire cannot open, check the function logs for either
@@ -193,7 +194,7 @@ Before creating a branch, the service:
 - limits request sizes and request rates
 - confirms the questionnaire's Git blob SHA still matches `main`
 - parses and validates the complete CSV
-- requires the exact current row set and row order
+- requires the exact current row set and restores canonical source order before committing
 - prevents changes to slug, title, and local-only identity fields
 - requires learned state and all filter values for local-only games
 - validates ratings, modes, numeric values, and min/max ranges

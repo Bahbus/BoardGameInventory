@@ -85,7 +85,7 @@ export function parseSavedHouseProgress(value: unknown): SavedHouseProgress {
     !Array.isArray(value.completedSlugs) ||
     value.completedSlugs.some((slug) => typeof slug !== "string")
   ) {
-    throw new Error("That progress backup has an unsupported format.");
+    throw new Error("Saved Setup progress has an unsupported format.");
   }
   return value as SavedHouseProgress;
 }
@@ -105,23 +105,27 @@ export function parseHouseEditorDataset(value: unknown): HouseEditorDataset {
     throw new Error("The setup questionnaire has an unsupported format.");
   }
   const slugs = new Set<string>();
-  const games = value.games.map((candidate) => {
-    if (
-      typeof candidate !== "object" ||
-      candidate === null ||
-      !("slug" in candidate) ||
-      typeof candidate.slug !== "string" ||
-      !("title" in candidate) ||
-      typeof candidate.title !== "string"
-    ) {
-      throw new Error("The setup questionnaire contains an invalid game.");
-    }
-    if (slugs.has(candidate.slug)) {
-      throw new Error(`The setup questionnaire repeats ${candidate.slug}.`);
-    }
-    slugs.add(candidate.slug);
-    return candidate as unknown as HouseAnswer;
-  });
+  const games = value.games
+    .map((candidate) => {
+      if (
+        typeof candidate !== "object" ||
+        candidate === null ||
+        !("slug" in candidate) ||
+        typeof candidate.slug !== "string" ||
+        !("title" in candidate) ||
+        typeof candidate.title !== "string"
+      ) {
+        throw new Error("The setup questionnaire contains an invalid game.");
+      }
+      if (slugs.has(candidate.slug)) {
+        throw new Error(`The setup questionnaire repeats ${candidate.slug}.`);
+      }
+      slugs.add(candidate.slug);
+      return candidate as unknown as HouseAnswer;
+    })
+    .sort((left, right) =>
+      left.title.localeCompare(right.title, "en", { numeric: true, sensitivity: "base" })
+    );
   return { schemaVersion: 1, sourceSha: value.sourceSha, games };
 }
 

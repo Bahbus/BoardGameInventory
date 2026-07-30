@@ -57,6 +57,27 @@ test.beforeEach(async ({ page }) => {
   await page.goto("/");
 });
 
+test("orders related navigation together and hides completed Setup", async ({ page }) => {
+  const navigation = page.getByRole("navigation", { name: "Primary" });
+  await expect(navigation.getByRole("button")).toHaveText([
+    "Library",
+    "Roulette",
+    "Wish list",
+    "Setup",
+    "Maintain"
+  ]);
+
+  await page.unroute("**/catalog.json");
+  await page.route("**/catalog.json", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ ...catalogFixture, setupRequired: false })
+    })
+  );
+  await page.reload();
+  await expect(page.getByRole("button", { name: "Setup", exact: true })).toHaveCount(0);
+});
+
 test("filters the library and preserves shareable settings", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "3 games ready" })).toBeVisible();
   await page.getByLabel("Group size").fill("6");
@@ -308,7 +329,7 @@ test("guides house answers one game at a time and keeps progress locally", async
       localMaxMinutes: "",
       localMinAge: ""
     }
-  ];
+  ].reverse();
   await page.route("**/test-setup-service/api/setup/questionnaire", (route) =>
     route.fulfill({
       contentType: "application/json",
@@ -330,6 +351,9 @@ test("guides house answers one game at a time and keeps progress locally", async
   await page.getByRole("button", { name: "Setup", exact: true }).click();
   await expect(page.getByText("Verified collaborator:")).toBeVisible();
   await expect(page.getByRole("heading", { name: "First Game" })).toBeVisible();
+  await expect(page.getByText("Progress saves automatically in this browser.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Back up progress" })).toHaveCount(0);
+  await expect(page.getByText("Restore progress", { exact: true })).toHaveCount(0);
   await page.getByLabel("Have you learned it?").selectOption("yes");
   await page.getByLabel("Overall house rating").selectOption("4");
   await page.getByLabel("Cooperative").check();

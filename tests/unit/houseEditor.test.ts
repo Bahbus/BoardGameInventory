@@ -46,7 +46,21 @@ describe("browser house editor", () => {
     ).toThrow(/repeats example-game/);
   });
 
-  it("accepts versioned backups and rejects malformed progress", () => {
+  it("sorts questionnaire games alphabetically for navigation", () => {
+    const games = parseHouseEditorDataset({
+      schemaVersion: 1,
+      sourceSha,
+      games: [
+        answer({ slug: "zulu", title: "Zulu" }),
+        answer({ slug: "alpha-10", title: "Alpha 10" }),
+        answer({ slug: "alpha-2", title: "Alpha 2" })
+      ]
+    }).games;
+
+    expect(games.map((game) => game.title)).toEqual(["Alpha 2", "Alpha 10", "Zulu"]);
+  });
+
+  it("accepts versioned stored progress and rejects malformed progress", () => {
     expect(
       parseSavedHouseProgress({
         schemaVersion: 1,

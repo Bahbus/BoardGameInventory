@@ -5,7 +5,7 @@ import { csvRecords, parseCsv } from "../../scripts/csv";
 const intakePath = "data/inventory.intake.csv";
 
 describe("resolved inventory intake CSV", () => {
-  it("has the stable open-format contract and all 82 resolved rows", async () => {
+  it("has the stable open-format contract and all 81 resolved rows", async () => {
     const source = await readFile(intakePath, "utf8");
     const [headers] = parseCsv(source);
     const rows = csvRecords(source);
@@ -21,7 +21,7 @@ describe("resolved inventory intake CSV", () => {
       "notes",
       "source_url"
     ]);
-    expect(rows).toHaveLength(82);
+    expect(rows).toHaveLength(81);
     expect(rows.every((row) => row.include === "Yes")).toBe(true);
     expect(rows.every((row) => row.match_status === "Ready to match")).toBe(true);
   });
@@ -53,7 +53,7 @@ describe("resolved inventory intake CSV", () => {
     expect(titles).toContain("Unsettled: Luna's");
     expect(titles).toContain("Unsettled: Survival Task Pack 1");
     expect(titles).toContain("Unsettled: Survival Task Pack 2");
-    expect(titles).toContain("Dice Throne: Season One – Barbarian & Moon Elf");
-    expect(titles).toContain("Dice Throne: Season One – Pyromancer & Shadow Thief");
+    expect(titles).toContain("Dice Throne: Season One");
+    expect([...titles].filter((title) => title.startsWith("Dice Throne"))).toHaveLength(1);
   });
 });

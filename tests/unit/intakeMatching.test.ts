@@ -16,8 +16,8 @@ describe("inventory matching manifest", () => {
     const slugs = new Set(manifest.map((row) => row.slug));
     const baseSlugs = new Set(manifest.filter((row) => row.kind === "game").map((row) => row.slug));
 
-    expect(manifest).toHaveLength(82);
-    expect(slugs.size).toBe(82);
+    expect(manifest).toHaveLength(81);
+    expect(slugs.size).toBe(81);
     expect(
       manifest
         .filter((row) => row.kind === "expansion")
@@ -48,11 +48,10 @@ describe("inventory matching manifest", () => {
     );
     expect(manifest.find((row) => row.slug === "buzzed-tower")?.matchStatus).toBe("local-only");
     expect(manifest.find((row) => row.slug === "wingspan")?.matchStatus).toBe("pending-bgg-search");
-    expect(
-      manifest
-        .filter((row) => row.proposedTitle.startsWith("Dice Throne: Season One"))
-        .every((row) => row.matchStatus === "review-shared-bgg-id")
-    ).toBe(true);
+    expect(manifest.find((row) => row.slug === "dice-throne-season-one")).toMatchObject({
+      matchStatus: "matched-from-source",
+      knownBggId: 216734
+    });
   });
 
   it("round-trips the deterministic manifest CSV", async () => {
