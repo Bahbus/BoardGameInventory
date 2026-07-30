@@ -53,6 +53,23 @@ export interface HouseIntakeRow {
   localMinAge: string;
 }
 
+const compareHouseTitles = (left: HouseIntakeRow, right: HouseIntakeRow) =>
+  left.title.localeCompare(right.title, "en", { numeric: true, sensitivity: "base" });
+
+export const houseSetupRequired = (rows: HouseIntakeRow[]) =>
+  rows.some(
+    (row) =>
+      !["yes", "no"].includes(row.learned) ||
+      (row.localValuesRequired === "yes" &&
+        [
+          row.localMinPlayers,
+          row.localMaxPlayers,
+          row.localMinMinutes,
+          row.localMaxMinutes,
+          row.localMinAge
+        ].some((value) => !value))
+  );
+
 export function buildHouseIntake(manifest: MatchingRow[]): HouseIntakeRow[] {
   return manifest
     .filter((row) => row.kind === "game")
@@ -83,7 +100,8 @@ export function buildHouseIntake(manifest: MatchingRow[]): HouseIntakeRow[] {
         localMaxMinutes: "",
         localMinAge: ""
       };
-    });
+    })
+    .sort(compareHouseTitles);
 }
 
 export function houseIntakeToCsv(rows: HouseIntakeRow[]): string {

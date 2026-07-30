@@ -91,6 +91,7 @@ export function HouseEditor({
   const [notice, setNotice] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submission, setSubmission] = useState<SetupSubmission>();
+  const [progressSaved, setProgressSaved] = useState(true);
 
   useEffect(() => {
     fetch(new URL("api/setup/questionnaire", serviceUrl), {
@@ -128,7 +129,12 @@ export function HouseEditor({
   }, [grant, onVerificationLost, serviceUrl]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+      setProgressSaved(true);
+    } catch {
+      setProgressSaved(false);
+    }
   }, [progress]);
 
   const games = useMemo(() => mergeHouseProgress(sourceGames, progress), [sourceGames, progress]);
@@ -176,24 +182,6 @@ export function HouseEditor({
         ? selected.filter((value) => value !== mode).join(";")
         : [...selected, mode].join(";")
     );
-  };
-
-  const restoreProgress = async (file: { text(): Promise<string> } | undefined) => {
-    if (!file) return;
-    try {
-      const restored = parseSavedHouseProgress(JSON.parse(await file.text()) as unknown);
-      const knownSlugs = new Set(sourceGames.map((game) => game.slug));
-      setProgress({
-        schemaVersion: 1,
-        answers: Object.fromEntries(
-          Object.entries(restored.answers).filter(([slug]) => knownSlugs.has(slug))
-        ),
-        completedSlugs: restored.completedSlugs.filter((slug) => knownSlugs.has(slug))
-      });
-      setNotice("Progress restored from the selected backup.");
-    } catch (cause) {
-      setNotice(cause instanceof Error ? cause.message : "That progress backup could not be read.");
-    }
   };
 
   const submit = async () => {
@@ -273,6 +261,11 @@ export function HouseEditor({
           </select>
         </label>
         <div class="setup-downloads">
+          <span class={progressSaved ? "setup-autosave" : "setup-autosave setup-autosave-error"}>
+            {progressSaved
+              ? "Progress saves automatically in this browser."
+              : "This browser could not save progress automatically."}
+          </span>
           <button
             class="secondary-button dark"
             onClick={() =>
@@ -285,26 +278,6 @@ export function HouseEditor({
           >
             Download CSV copy
           </button>
-          <button
-            class="text-button"
-            onClick={() =>
-              download(
-                "inventory-house-progress.json",
-                `${JSON.stringify(progress, null, 2)}\n`,
-                "application/json"
-              )
-            }
-          >
-            Back up progress
-          </button>
-          <label class="restore-button">
-            Restore progress
-            <input
-              type="file"
-              accept="application/json,.json"
-              onChange={(event) => void restoreProgress(event.currentTarget.files?.[0])}
-            />
-          </label>
         </div>
       </div>
 

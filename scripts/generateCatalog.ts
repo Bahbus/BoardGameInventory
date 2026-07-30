@@ -1,12 +1,19 @@
 import { generateCatalog } from "./catalogGeneration";
+import { readFile } from "node:fs/promises";
+import { houseSetupRequired, validateHouseIntakeCsv } from "./houseIntake";
 import { readInventory, readWishlist } from "./inventoryIo";
 
-const [inventory, wishlist] = await Promise.all([readInventory(), readWishlist()]);
+const [inventory, wishlist, houseIntakeSource] = await Promise.all([
+  readInventory(),
+  readWishlist(),
+  readFile(new URL("../data/inventory.house.csv", import.meta.url), "utf8")
+]);
 const token = process.env.BGG_API_TOKEN;
 const output = new URL("../public/catalog.json", import.meta.url);
 const payload = await generateCatalog({
   inventory,
   wishlist,
+  setupRequired: houseSetupRequired(validateHouseIntakeCsv(houseIntakeSource)),
   output,
   token,
   requireEnrichment: process.env.REQUIRE_BGG_ENRICHMENT === "1"

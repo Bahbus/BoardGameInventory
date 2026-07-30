@@ -46,10 +46,18 @@ export function validateHouseSubmission(currentCsv: string, submittedCsv: string
     throw new Error("The submitted game list does not match the current setup list.");
   }
 
+  const submittedBySlug = new Map(submitted.map((row) => [row.slug, row]));
+  if (submittedBySlug.size !== current.length) {
+    throw new Error("The submitted game list does not match the current setup list.");
+  }
+
   for (let index = 0; index < current.length; index += 1) {
     const source = current[index];
-    const answer = submitted[index];
+    const answer = submittedBySlug.get(source.slug);
     const row = index + 2;
+    if (!answer) {
+      throw new Error("The submitted game list does not match the current setup list.");
+    }
     if (
       answer.slug !== source.slug ||
       answer.title !== source.title ||
@@ -106,7 +114,8 @@ export function validateHouseSubmission(currentCsv: string, submittedCsv: string
     for (const field of textFields) assertSafeText(answer[field], field, row, TEXT_LIMIT);
     for (const field of listFields) assertSafeText(answer[field], field, row, LIST_LIMIT);
   }
-  return { rows: submitted, csv: houseIntakeToCsv(submitted) };
+  const sourceOrdered = current.map((row) => submittedBySlug.get(row.slug)!);
+  return { rows: sourceOrdered, csv: houseIntakeToCsv(sourceOrdered) };
 }
 
 export const questionnaireFromCsv = (sourceSha: string, csv: string) => ({

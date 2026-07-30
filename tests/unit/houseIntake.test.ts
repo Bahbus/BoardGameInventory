@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 import {
   buildHouseIntake,
+  houseSetupRequired,
   houseIntakeToCsv,
   validateHouseIntakeCsv
 } from "../../scripts/houseIntake";
@@ -17,6 +18,14 @@ describe("house-data questionnaire", () => {
     expect(rows.every((row) => row.availability === "available")).toBe(true);
     expect(rows.every((row) => row.learned === "")).toBe(true);
     expect(new Set(rows.map((row) => row.slug)).size).toBe(rows.length);
+    expect(rows.map((row) => row.title)).toEqual(
+      [...rows.map((row) => row.title)].sort((left, right) =>
+        left.localeCompare(right, "en", { numeric: true, sensitivity: "base" })
+      )
+    );
+    expect(rows.filter((row) => row.title.startsWith("Dice Throne"))).toEqual([
+      expect.objectContaining({ slug: "dice-throne-season-one" })
+    ]);
   });
 
   it("flags local-only filter values and known adult content", async () => {
@@ -33,6 +42,25 @@ describe("house-data questionnaire", () => {
     const manifest = parseMatchingManifest(await readFile("data/inventory.matching.csv", "utf8"));
     const rows = buildHouseIntake(manifest);
     expect(validateHouseIntakeCsv(houseIntakeToCsv(rows))).toEqual(rows);
+  });
+
+  it("requires Setup only while a required answer is incomplete", async () => {
+    const manifest = parseMatchingManifest(await readFile("data/inventory.matching.csv", "utf8"));
+    const rows = buildHouseIntake(manifest);
+    expect(houseSetupRequired(rows)).toBe(true);
+    expect(
+      houseSetupRequired(
+        rows.map((row) => ({
+          ...row,
+          learned: "yes",
+          localMinPlayers: row.localValuesRequired === "yes" ? "2" : row.localMinPlayers,
+          localMaxPlayers: row.localValuesRequired === "yes" ? "8" : row.localMaxPlayers,
+          localMinMinutes: row.localValuesRequired === "yes" ? "15" : row.localMinMinutes,
+          localMaxMinutes: row.localValuesRequired === "yes" ? "30" : row.localMaxMinutes,
+          localMinAge: row.localValuesRequired === "yes" ? "18" : row.localMinAge
+        }))
+      )
+    ).toBe(false);
   });
 
   it("rejects invalid rating scales", async () => {

@@ -1229,27 +1229,15 @@ output {
   gap: 0.6rem;
 }
 
-.restore-button {
-  position: relative;
-  overflow: hidden;
-  padding: 0.6rem;
-  color: var(--purple);
-  font-weight: 750;
-  text-align: center;
-  cursor: pointer;
+.setup-autosave {
+  max-width: 19rem;
+  color: #5f5668;
+  font-size: 0.78rem;
+  line-height: 1.35;
 }
 
-.restore-button input {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  opacity: 0;
-}
-
-.restore-button:focus-within {
-  outline: 3px solid #0b73d9;
-  outline-offset: 3px;
+.setup-autosave-error {
+  color: #9b2c2c;
 }
 
 .setup-card {

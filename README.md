@@ -70,9 +70,11 @@ never accepts a candidate automatically.
 House-specific information can be collected independently of BGG. The intended owner workflow
 is the site's **Setup** screen. Setup remains completely locked until the separate GitHub
 verification service confirms that the signed-in account is a repository collaborator. Once
-verified, it presents one game at a time, saves progress in that browser, supports open JSON
-backup and CSV download, and submits completed answers to a new branch and pull request. It never
-writes to `main` or merges automatically.
+verified, it presents games alphabetically, saves progress automatically in that browser, supports
+an open CSV download, and submits completed answers to a new branch and pull request. It never
+writes to `main` or merges automatically. The public Setup tab is included only while a required
+house answer is incomplete; merging the completed Setup pull request hides it on the next Pages
+build, and adding a new incomplete game brings it back.
 
 Regenerate the browser questionnaire after changing the matching manifest:
 

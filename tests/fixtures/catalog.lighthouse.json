@@ -2,6 +2,7 @@
   "schemaVersion": 1,
   "refreshedAt": "2026-07-29T00:00:00.000Z",
   "enriched": true,
+  "setupRequired": true,
   "games": [
     {
       "slug": "forest-council",

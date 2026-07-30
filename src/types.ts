@@ -133,6 +133,7 @@ export interface CatalogPayload {
   schemaVersion: 1;
   refreshedAt: string;
   enriched: boolean;
+  setupRequired: boolean;
   games: CatalogGame[];
   wishlist: CatalogWishlistGame[];
 }
