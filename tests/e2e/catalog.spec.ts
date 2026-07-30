@@ -63,8 +63,8 @@ test("orders related navigation together and hides completed Setup", async ({ pa
     "Library",
     "Roulette",
     "Wish list",
-    "Setup",
-    "Maintain"
+    "Maintain",
+    "Setup"
   ]);
 
   await page.unroute("**/catalog.json");

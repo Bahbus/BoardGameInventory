@@ -929,10 +929,10 @@ export function App() {
               ["library", "Library"],
               ["roulette", "Roulette"],
               ["wishlist", "Wish list"],
+              ["maintain", "Maintain"],
               ...(payload?.setupRequired !== false || setupAuthCallback
                 ? ([["setup", "Setup"]] as const)
-                : []),
-              ["maintain", "Maintain"]
+                : [])
             ] as const
           ).map(([value, label]) => (
             <button
