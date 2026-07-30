@@ -1,6 +1,6 @@
 export type Availability = "available" | "loaned" | "incomplete" | "unavailable";
 export type TableSpace = "compact" | "standard" | "large";
-export type GameMode = "competitive" | "cooperative" | "team";
+export type GameMode = "competitive" | "cooperative" | "team" | "solo";
 export type SortKey = "name" | "bggRating" | "complexity" | "duration" | "players" | "houseRating";
 
 export interface ValueOverrides {

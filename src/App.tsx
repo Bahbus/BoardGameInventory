@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import { SetupAccessGate } from "./SetupAccessGate";
 import {
   createStandalonePlayModes,
+  effectiveModes,
   effectiveValues,
   filterAndScore,
   sortScoredGames,
@@ -185,6 +186,7 @@ function FilterPanel({
             <option value="competitive">Competitive</option>
             <option value="cooperative">Cooperative</option>
             <option value="team">Teams</option>
+            <option value="solo">Solo</option>
           </select>
         </label>
         <label>
@@ -405,7 +407,7 @@ function GameCard({ entry }: { entry: ScoredGame }) {
         </div>
         {overridden && <p class="override-note">House values control the displayed range.</p>}
         <div class="tag-row">
-          {[...game.house.modes, ...game.house.moods].slice(0, 5).map((tag) => (
+          {[...effectiveModes(game), ...game.house.moods].slice(0, 5).map((tag) => (
             <span class="tag" key={tag}>
               {tag}
             </span>

@@ -159,6 +159,9 @@ export function validateHouseAnswer(answer: HouseAnswer): string[] {
   ) {
     errors.push("Fill in every local game value so filtering will work.");
   }
+  if (answer.localValuesRequired === "yes" && !normalizeList(answer.modes)) {
+    errors.push("Choose at least one supported style so mode filtering will work.");
+  }
   return errors;
 }
 

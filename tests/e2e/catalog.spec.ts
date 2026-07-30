@@ -356,7 +356,7 @@ test("guides house answers one game at a time and keeps progress locally", async
   await expect(page.getByText("Restore progress", { exact: true })).toHaveCount(0);
   await page.getByLabel("Have you learned it?").selectOption("yes");
   await page.getByLabel("Overall house rating").selectOption("4");
-  await page.getByLabel("Cooperative").check();
+  await expect(page.getByRole("group", { name: "Supported styles" })).toHaveCount(0);
   await page.getByRole("button", { name: "Save & next" }).click();
 
   await expect(page.getByRole("heading", { name: "Local Game" })).toBeVisible();
@@ -367,6 +367,8 @@ test("guides house answers one game at a time and keeps progress locally", async
   await page.getByLabel("Minimum minutes").fill("15");
   await page.getByLabel("Maximum minutes").fill("30");
   await page.getByLabel("Minimum age").fill("18");
+  await page.getByLabel("Competitive").check();
+  await page.getByLabel("Solo").check();
   await page.getByRole("button", { name: "Save game" }).click();
   await expect(page.getByText("2 of 2", { exact: true })).toBeVisible();
   await expect(page.getByText("Every game has a completed answer.")).toBeVisible();

@@ -416,23 +416,29 @@ export function HouseEditor({
             <p>These answers improve preference matching. Use everyday words where prompted.</p>
           </div>
           <div class="setup-fields">
-            <fieldset class="setup-modes">
-              <legend>Supported styles</legend>
-              {[
-                ["competitive", "Competitive"],
-                ["cooperative", "Cooperative"],
-                ["team", "Teams"]
-              ].map(([value, label]) => (
-                <label key={value}>
-                  <input
-                    type="checkbox"
-                    checked={selectedModes(current.modes).includes(value)}
-                    onChange={() => toggleMode(value)}
-                  />
-                  {label}
-                </label>
-              ))}
-            </fieldset>
+            {current.localValuesRequired === "yes" ? (
+              <fieldset class="setup-modes">
+                <legend>Supported styles</legend>
+                <p class="setup-mode-help">
+                  This game has no BGG record, so select every style it supports.
+                </p>
+                {[
+                  ["competitive", "Competitive"],
+                  ["cooperative", "Cooperative"],
+                  ["team", "Teams"],
+                  ["solo", "Solo"]
+                ].map(([value, label]) => (
+                  <label key={value}>
+                    <input
+                      type="checkbox"
+                      checked={selectedModes(current.modes).includes(value)}
+                      onChange={() => toggleMode(value)}
+                    />
+                    {label}
+                  </label>
+                ))}
+              </fieldset>
+            ) : null}
             <label>
               Mood or vibe
               <input

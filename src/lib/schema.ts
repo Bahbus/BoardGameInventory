@@ -3,7 +3,7 @@ import type { Inventory, Wishlist } from "../types";
 
 const availabilitySchema = z.enum(["available", "loaned", "incomplete", "unavailable"]);
 const tableSpaceSchema = z.enum(["compact", "standard", "large"]);
-const modeSchema = z.enum(["competitive", "cooperative", "team"]);
+const modeSchema = z.enum(["competitive", "cooperative", "team", "solo"]);
 const localValues = ["minPlayers", "maxPlayers", "minMinutes", "maxMinutes", "minAge"] as const;
 
 const overridesSchema = z

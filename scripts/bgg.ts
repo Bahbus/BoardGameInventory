@@ -36,12 +36,26 @@ const textValue = (value: unknown): string | undefined => {
 const asArray = <T>(value: T | T[] | undefined): T[] =>
   value === undefined ? [] : Array.isArray(value) ? value : [value];
 
-function modesFromLinks(links: Array<{ type?: string; value?: string }>): GameMode[] {
-  const haystack = links.map((link) => link.value?.toLocaleLowerCase() ?? "").join(" ");
+function modesFromLinks(
+  links: Array<{ type?: string; value?: string }>,
+  minPlayers: number | undefined
+): GameMode[] {
+  const mechanisms = new Set(
+    links
+      .filter((link) => link.type === "boardgamemechanic")
+      .map((link) => link.value?.trim().toLocaleLowerCase())
+      .filter((value): value is string => Boolean(value))
+  );
   const modes: GameMode[] = [];
-  if (haystack.includes("cooperative")) modes.push("cooperative");
-  if (haystack.includes("team")) modes.push("team");
-  if (!modes.length || haystack.includes("competitive")) modes.push("competitive");
+  const cooperative = mechanisms.has("cooperative game");
+  const team = mechanisms.has("team-based game");
+  const semiCooperative = mechanisms.has("semi-cooperative game");
+  const solo = minPlayers === 1 || mechanisms.has("solo / solitaire game");
+
+  if (cooperative || semiCooperative) modes.push("cooperative");
+  if (team) modes.push("team");
+  if (!cooperative || semiCooperative) modes.push("competitive");
+  if (solo) modes.push("solo");
   return modes;
 }
 
@@ -121,11 +135,13 @@ export function parseBggThings(xml: string): BggMetadata[] {
     const rankValue = ranks.find((rank) => rank.name === "boardgame")?.value;
     const rank = rankValue === "Not Ranked" ? undefined : numberValue(rankValue);
 
+    const minPlayers = numberValue(item.minplayers);
+
     return {
       bggId,
       name,
       yearPublished: numberValue(item.yearpublished),
-      minPlayers: numberValue(item.minplayers),
+      minPlayers,
       maxPlayers: numberValue(item.maxplayers),
       minMinutes: numberValue(item.minplaytime),
       maxMinutes: numberValue(item.maxplaytime),
@@ -137,7 +153,7 @@ export function parseBggThings(xml: string): BggMetadata[] {
       image: textValue(item.image),
       categories,
       mechanics,
-      modes: modesFromLinks(links),
+      modes: modesFromLinks(links, minPlayers),
       playerRecommendations: parsePlayerRecommendations(asArray(item.poll)),
       url: `https://boardgamegeek.com/boardgame/${bggId}`
     };

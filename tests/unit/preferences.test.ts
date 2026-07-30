@@ -22,4 +22,9 @@ describe("shareable preferences", () => {
   it("falls back safely for an unknown schema version", () => {
     expect(parsePreferences("v=999&players=6")).toEqual(DEFAULT_PREFERENCES);
   });
+
+  it("round-trips the solo mode filter", () => {
+    const preferences = { ...DEFAULT_PREFERENCES, requiredMode: "solo" as const };
+    expect(parsePreferences(serializePreferences(preferences))).toEqual(preferences);
+  });
 });

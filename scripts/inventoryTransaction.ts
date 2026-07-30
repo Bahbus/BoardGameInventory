@@ -19,7 +19,12 @@ const availabilityValues = [
   "unavailable"
 ] as const satisfies readonly Availability[];
 const tableSpaceValues = ["compact", "standard", "large"] as const satisfies readonly TableSpace[];
-const modeValues = ["competitive", "cooperative", "team"] as const satisfies readonly GameMode[];
+const modeValues = [
+  "competitive",
+  "cooperative",
+  "team",
+  "solo"
+] as const satisfies readonly GameMode[];
 
 const integer = (value: string | undefined, label: string) => {
   const parsed = Number(value);

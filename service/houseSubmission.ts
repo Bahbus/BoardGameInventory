@@ -72,7 +72,7 @@ export function validateHouseSubmission(currentCsv: string, submittedCsv: string
       .split(";")
       .map((value) => value.trim())
       .filter(Boolean);
-    if (modes.some((value) => !["competitive", "cooperative", "team"].includes(value))) {
+    if (modes.some((value) => !["competitive", "cooperative", "team", "solo"].includes(value))) {
       throw new Error(`House intake row ${row} has an invalid game mode.`);
     }
     for (const field of numericFields) {
@@ -96,6 +96,9 @@ export function validateHouseSubmission(currentCsv: string, submittedCsv: string
       ].some((value) => !value)
     ) {
       throw new Error(`House intake row ${row} needs every local filter value.`);
+    }
+    if (answer.localValuesRequired === "yes" && !modes.length) {
+      throw new Error(`House intake row ${row} needs at least one game mode.`);
     }
     if (
       answer.localMinPlayers &&

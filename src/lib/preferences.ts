@@ -62,7 +62,7 @@ export function serializePreferences(preferences: GroupPreferences): string {
 export function parsePreferences(search: string): GroupPreferences {
   const params = new URLSearchParams(search.startsWith("?") ? search.slice(1) : search);
   if (params.get("v") !== "1") return { ...DEFAULT_PREFERENCES };
-  const validModes = ["competitive", "cooperative", "team"];
+  const validModes = ["competitive", "cooperative", "team", "solo"];
   const validSpaces = ["compact", "standard", "large"];
   const validSorts = ["name", "bggRating", "complexity", "duration", "players", "houseRating"];
   const mode = params.get("mode") ?? "";

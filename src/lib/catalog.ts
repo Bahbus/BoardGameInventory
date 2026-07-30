@@ -1,5 +1,6 @@
 import type {
   CatalogGame,
+  GameMode,
   GroupPreferences,
   ScoreComponent,
   ScoredGame,
@@ -26,6 +27,10 @@ export function effectiveValues(game: CatalogGame) {
     maxMinutes: maxValue([game.overrides?.maxMinutes, metadata.maxMinutes]),
     minAge: maxValue([game.overrides?.minAge, metadata.minAge])
   };
+}
+
+export function effectiveModes(game: CatalogGame): GameMode[] {
+  return game.house.modes.length ? game.house.modes : game.metadata.modes;
 }
 
 export function isEligible(game: CatalogGame, preferences: GroupPreferences): boolean {
@@ -63,7 +68,7 @@ export function isEligible(game: CatalogGame, preferences: GroupPreferences): bo
   ) {
     return false;
   }
-  if (preferences.requiredMode && !game.house.modes.includes(preferences.requiredMode)) {
+  if (preferences.requiredMode && !effectiveModes(game).includes(preferences.requiredMode)) {
     return false;
   }
   if (

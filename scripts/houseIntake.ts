@@ -61,13 +61,14 @@ export const houseSetupRequired = (rows: HouseIntakeRow[]) =>
     (row) =>
       !["yes", "no"].includes(row.learned) ||
       (row.localValuesRequired === "yes" &&
-        [
-          row.localMinPlayers,
-          row.localMaxPlayers,
-          row.localMinMinutes,
-          row.localMaxMinutes,
-          row.localMinAge
-        ].some((value) => !value))
+        (!row.modes ||
+          [
+            row.localMinPlayers,
+            row.localMaxPlayers,
+            row.localMinMinutes,
+            row.localMaxMinutes,
+            row.localMinAge
+          ].some((value) => !value)))
   );
 
 export function buildHouseIntake(manifest: MatchingRow[]): HouseIntakeRow[] {
