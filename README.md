@@ -91,9 +91,11 @@ per selectable game. The second validates that source and creates a local inspec
 `outputs/house-intake.json`; it is never packaged in the public GitHub Pages artifact. The live
 service reads the current file from `main`, ties the questionnaire to its Git blob SHA, and
 rejects stale submissions. Setup collects learned state, shelf label, ratings, setup and teaching
-burden, table space, interaction, luck, downtime, modes, moods, accessibility, content, and
-recommendation notes. Local-only games also require player-count, duration, and minimum-age
-answers so they remain fully filterable.
+burden, table space, interaction, luck, downtime, moods, accessibility, content, and recommendation
+notes. Competitive, cooperative, team, and solo support normally come from BGG enrichment. A
+non-empty authored mode list is a full house override when BGG needs correcting. Local-only games
+ask for modes as well as player-count, duration, and minimum-age answers so they remain fully
+filterable.
 
 Set the public service URL at build time using `VITE_SETUP_SERVICE_URL`. If it is absent or
 invalid, the site fails closed and explains that verification is unavailable. Never place a

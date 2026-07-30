@@ -53,6 +53,7 @@ describe("house-data questionnaire", () => {
         rows.map((row) => ({
           ...row,
           learned: "yes",
+          modes: row.localValuesRequired === "yes" ? "competitive" : row.modes,
           localMinPlayers: row.localValuesRequired === "yes" ? "2" : row.localMinPlayers,
           localMaxPlayers: row.localValuesRequired === "yes" ? "8" : row.localMaxPlayers,
           localMinMinutes: row.localValuesRequired === "yes" ? "15" : row.localMinMinutes,

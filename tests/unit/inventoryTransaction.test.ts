@@ -197,7 +197,7 @@ describe("inventory issue transactions", () => {
         "Game name": "Invalid",
         "Stable slug": "invalid",
         "BGG ID": "400",
-        Modes: "solo"
+        Modes: "duel"
       }),
       /Modes contains invalid/
     ],

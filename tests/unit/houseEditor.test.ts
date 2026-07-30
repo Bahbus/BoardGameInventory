@@ -99,7 +99,7 @@ describe("browser house editor", () => {
     });
   });
 
-  it("requires a learned answer and all five filter values for a local-only game", () => {
+  it("requires a learned answer, modes, and all five filter values for a local-only game", () => {
     expect(validateHouseAnswer(answer())).toEqual(["Choose whether the game has been learned."]);
     expect(
       validateHouseAnswer(
@@ -109,12 +109,16 @@ describe("browser house editor", () => {
           localMinPlayers: "2"
         })
       )
-    ).toEqual(["Fill in every local game value so filtering will work."]);
+    ).toEqual([
+      "Fill in every local game value so filtering will work.",
+      "Choose at least one supported style so mode filtering will work."
+    ]);
     expect(
       validateHouseAnswer(
         answer({
           learned: "yes",
           localValuesRequired: "yes",
+          modes: "competitive;solo",
           localMinPlayers: "2",
           localMaxPlayers: "8",
           localMinMinutes: "15",

@@ -97,6 +97,7 @@ describe("guided setup submissions", () => {
     const completeLocal = {
       learned: "yes",
       localValuesRequired: "yes",
+      modes: "competitive",
       localMinPlayers: "2",
       localMaxPlayers: "4",
       localMinMinutes: "30",
@@ -110,7 +111,7 @@ describe("guided setup submissions", () => {
       )
     ).toThrow(/unsafe spreadsheet formula/);
     expect(() =>
-      validateHouseSubmission(current, houseIntakeToCsv([row({ ...completeLocal, modes: "solo" })]))
+      validateHouseSubmission(current, houseIntakeToCsv([row({ ...completeLocal, modes: "duel" })]))
     ).toThrow(/invalid game mode/);
     expect(() =>
       validateHouseSubmission(
@@ -118,5 +119,32 @@ describe("guided setup submissions", () => {
         houseIntakeToCsv([row({ ...completeLocal, localMinPlayers: "5", localMaxPlayers: "2" })])
       )
     ).toThrow(/inverted player range/);
+  });
+
+  it("accepts solo and requires a mode only for local games", () => {
+    const bggCurrent = houseIntakeToCsv([row()]);
+    expect(() =>
+      validateHouseSubmission(bggCurrent, houseIntakeToCsv([row({ learned: "yes" })]))
+    ).not.toThrow();
+
+    const local = row({
+      learned: "yes",
+      localValuesRequired: "yes",
+      modes: "solo",
+      localMinPlayers: "1",
+      localMaxPlayers: "1",
+      localMinMinutes: "30",
+      localMaxMinutes: "45",
+      localMinAge: "12"
+    });
+    expect(() =>
+      validateHouseSubmission(houseIntakeToCsv([local]), houseIntakeToCsv([local]))
+    ).not.toThrow();
+    expect(() =>
+      validateHouseSubmission(
+        houseIntakeToCsv([local]),
+        houseIntakeToCsv([row({ ...local, modes: "" })])
+      )
+    ).toThrow(/at least one game mode/);
   });
 });

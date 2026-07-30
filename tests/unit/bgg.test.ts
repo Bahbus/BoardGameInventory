@@ -50,6 +50,37 @@ describe("BGG enrichment", () => {
     expect(game.playerRecommendations).toEqual([{ playerCount: 4, rating: "best" }]);
   });
 
+  it("derives competitive, cooperative, team, and solo modes from BGG fields", () => {
+    const modesXml = `<items>
+      <item type="boardgame" id="201">
+        <name type="primary" value="Solo Team"/>
+        <minplayers value="1"/>
+        <link type="boardgamemechanic" value="Cooperative Game"/>
+        <link type="boardgamemechanic" value="Team-Based Game"/>
+      </item>
+      <item type="boardgame" id="202">
+        <name type="primary" value="Semi-Cooperative"/>
+        <minplayers value="2"/>
+        <link type="boardgamemechanic" value="Semi-Cooperative Game"/>
+      </item>
+      <item type="boardgame" id="203">
+        <name type="primary" value="Ordinary Competition"/>
+        <minplayers value="2"/>
+      </item>
+      <item type="boardgame" id="204">
+        <name type="primary" value="Team Competition"/>
+        <minplayers value="4"/>
+        <link type="boardgamemechanic" value="Team-Based Game"/>
+      </item>
+    </items>`;
+
+    const [soloTeam, semiCooperative, competitive, teamCompetition] = parseBggThings(modesXml);
+    expect(soloTeam.modes).toEqual(["cooperative", "team", "solo"]);
+    expect(semiCooperative.modes).toEqual(["cooperative", "competitive"]);
+    expect(competitive.modes).toEqual(["competitive"]);
+    expect(teamCompetition.modes).toEqual(["team", "competitive"]);
+  });
+
   it("retries queued responses and returns the successful payload", async () => {
     let calls = 0;
     const fetcher = async () => {

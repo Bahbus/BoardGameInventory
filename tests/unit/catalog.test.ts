@@ -1,12 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
   createStandalonePlayModes,
+  effectiveModes,
   filterAndScore,
   isEligible,
   scoreGame,
   weightedDraw
 } from "../../src/lib/catalog";
 import { DEFAULT_PREFERENCES } from "../../src/lib/preferences";
+import type { GameMode } from "../../src/types";
 import { catalogFixture } from "../fixtures/catalog";
 
 const forest = catalogFixture.games[0];
@@ -63,6 +65,23 @@ describe("catalog filtering and scoring", () => {
     expect(isEligible(local, { ...DEFAULT_PREFERENCES, players: 8, maxMinutes: 45 })).toBe(true);
     expect(isEligible(local, { ...DEFAULT_PREFERENCES, players: 2 })).toBe(false);
     expect(isEligible(local, { ...DEFAULT_PREFERENCES, maxMinutes: 30 })).toBe(false);
+  });
+
+  it("uses BGG modes by default and lets house modes override them", () => {
+    const derived = {
+      ...forest,
+      house: { ...forest.house, modes: [] },
+      metadata: { ...forest.metadata, modes: ["cooperative", "solo"] as GameMode[] }
+    };
+    expect(effectiveModes(derived)).toEqual(["cooperative", "solo"]);
+    expect(isEligible(derived, { ...DEFAULT_PREFERENCES, requiredMode: "solo" })).toBe(true);
+
+    const overridden = {
+      ...derived,
+      house: { ...derived.house, modes: ["competitive"] as GameMode[] }
+    };
+    expect(effectiveModes(overridden)).toEqual(["competitive"]);
+    expect(isEligible(overridden, { ...DEFAULT_PREFERENCES, requiredMode: "solo" })).toBe(false);
   });
 
   it("uses the documented exact weight for a perfect match", () => {
