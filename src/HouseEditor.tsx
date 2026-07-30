@@ -101,8 +101,23 @@ export function HouseEditor({
           onVerificationLost();
           throw new Error("GitHub collaborator verification is no longer valid.");
         }
-        if (!response.ok) throw new Error("The setup questionnaire could not be loaded.");
-        return response.json() as Promise<unknown>;
+        return response
+          .json()
+          .catch(() => undefined)
+          .then((value: unknown) => {
+            if (!response.ok) {
+              const message =
+                value &&
+                typeof value === "object" &&
+                "message" in value &&
+                typeof value.message === "string" &&
+                value.message.length <= 500
+                  ? value.message
+                  : "The setup questionnaire could not be loaded.";
+              throw new Error(message);
+            }
+            return value;
+          });
       })
       .then((value) => {
         const dataset = parseHouseEditorDataset(value);

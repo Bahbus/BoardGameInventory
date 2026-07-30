@@ -34,8 +34,10 @@ The service uses two different GitHub identities:
 1. A short-lived GitHub App user access token proves that the signed-in user and the App both have
    write access to this repository. PKCE and signed OAuth state protect the browser flow. The
    service revokes that GitHub token immediately after verification.
-2. A repository-restricted installation token reads `data/inventory.house.csv`, creates one
+2. A repository-restricted installation client reads `data/inventory.house.csv`, creates one
    fixed `inventory/house-setup` branch, commits only that file, and opens a non-draft pull request.
+   The service uses Octokit's supported `getInstallationOctokit` flow so installation tokens remain
+   internal and are refreshed by the SDK.
 
 The browser receives only a service-signed Setup grant valid for 15 minutes by default. It never
 receives a GitHub access token, client secret, installation token, or private key. The service
@@ -172,6 +174,12 @@ After deploying the service:
 7. Review and merge that pull request manually.
 8. Confirm GitHub deletes `inventory/house-setup` after merge, or delete that merged branch through
    GitHub before starting another Setup submission.
+
+If verification succeeds but the questionnaire cannot open, check the function logs for either
+`GitHub App installation authentication failed` or `GitHub App could not read the setup source`.
+The first indicates an App ID, installation ID, or private-key problem. The second indicates
+repository access, file permissions, or a missing `data/inventory.house.csv`. The browser receives
+only the corresponding safe recovery message.
 
 The Pages build adds only the configured service origin to `connect-src`. If the repository
 variable is absent or invalid, Setup fails closed and the public site does not allow the

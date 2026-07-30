@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseInventory } from "../../src/lib/schema";
+import { parseInventory, parseWishlist } from "../../src/lib/schema";
 
 const game = (slug: string, bggId: number) => ({
   slug,
@@ -15,6 +15,43 @@ const game = (slug: string, bggId: number) => ({
     contentFlags: []
   },
   expansions: []
+});
+
+describe("wishlist schema", () => {
+  it("accepts a linked unowned game", () => {
+    expect(
+      parseWishlist({
+        version: 1,
+        games: [
+          {
+            slug: "future-game",
+            bggId: 42,
+            name: "Future Game",
+            status: "researching",
+            priority: 4
+          }
+        ]
+      }).games[0]
+    ).toMatchObject({ slug: "future-game", status: "researching", priority: 4 });
+  });
+
+  it("rejects duplicate identities and unlinked requests", () => {
+    expect(() =>
+      parseWishlist({
+        version: 1,
+        games: [
+          { slug: "same", bggId: 42, name: "One" },
+          { slug: "same", bggId: 42, name: "Two" }
+        ]
+      })
+    ).toThrow(/Duplicate wishlist/);
+    expect(() =>
+      parseWishlist({
+        version: 1,
+        games: [{ slug: "unlinked", name: "Unlinked" }]
+      })
+    ).toThrow(/bggId or sourceUrl/);
+  });
 });
 
 describe("inventory schema", () => {

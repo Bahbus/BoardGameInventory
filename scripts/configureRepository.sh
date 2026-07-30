@@ -7,6 +7,7 @@ for label in \
   "inventory:add|1d76db|Add an inventory item" \
   "inventory:update|5319e7|Update an inventory item" \
   "inventory:remove|b60205|Remove an inventory item" \
+  "wishlist|7c3aed|Unowned game request or wish-list candidate" \
   "approved-inventory-change|0e8a16|Maintainer-approved public suggestion" \
   "suggestion|d4c5f9|Public suggestion awaiting review" \
   "needs-info|d876e3|Request needs correction"; do

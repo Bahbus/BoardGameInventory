@@ -679,6 +679,7 @@ output {
   font-size: 2rem;
 }
 
+.empty-state h2,
 .empty-state h3 {
   margin-bottom: 0.5rem;
   font-size: 1.7rem;
@@ -691,9 +692,14 @@ output {
 
 .primary-button,
 .secondary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
   border-radius: 0.7rem;
   padding: 0.78rem 1rem;
   font-weight: 800;
+  text-decoration: none;
 }
 
 .primary-button {
@@ -870,6 +876,124 @@ output {
   margin: 0;
   padding-left: 1.2rem;
   color: #ddd4e8;
+}
+
+.wishlist-section {
+  margin: 2.5rem 0;
+}
+
+.wishlist-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 2rem;
+  margin-bottom: 1.4rem;
+}
+
+.wishlist-heading h2 {
+  margin: 0.15rem 0 0.55rem;
+  font-size: clamp(2rem, 5vw, 3.6rem);
+  line-height: 1;
+}
+
+.wishlist-heading p {
+  max-width: 680px;
+  margin: 0;
+  color: #6b6075;
+  line-height: 1.6;
+}
+
+.wishlist-toolbar {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(220px, 1fr);
+  gap: 1rem;
+  align-items: end;
+  margin-bottom: 1.4rem;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.68);
+}
+
+.wishlist-toolbar input {
+  width: 100%;
+}
+
+.wishlist-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.2rem;
+}
+
+.wishlist-card {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  min-height: 210px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 1.2rem;
+  background: var(--paper);
+  box-shadow: 0 5px 18px rgba(43, 28, 68, 0.06);
+}
+
+.wishlist-cover {
+  min-height: 210px;
+  background: #e7dfef;
+}
+
+.wishlist-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.wishlist-cover .cover-fallback {
+  grid-template-columns: 1fr;
+  align-content: center;
+  gap: 0.6rem;
+  padding: 1rem;
+  text-align: center;
+}
+
+.wishlist-cover .cover-fallback span {
+  font-size: 2.6rem;
+}
+
+.wishlist-cover .cover-fallback strong {
+  font-size: 1.15rem;
+}
+
+.wishlist-card-copy {
+  padding: 1.1rem;
+}
+
+.wishlist-card-copy h2 {
+  margin: 0.5rem 0;
+  font-size: 1.4rem;
+}
+
+.wishlist-card-copy p {
+  color: #6b6075;
+  line-height: 1.5;
+}
+
+.wishlist-card-copy a {
+  font-weight: 800;
+}
+
+.wishlist-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.wishlist-badges span {
+  padding: 0.3rem 0.55rem;
+  border-radius: 999px;
+  color: var(--purple-dark);
+  background: var(--mint);
+  font-size: 0.7rem;
+  font-weight: 800;
 }
 
 .maintenance-card {
@@ -1315,6 +1439,10 @@ footer p {
     grid-template-columns: repeat(2, 1fr);
   }
 
+  .wishlist-grid {
+    grid-template-columns: 1fr;
+  }
+
   .roulette-card,
   .maintenance-card,
   .setup-section {
@@ -1350,10 +1478,12 @@ footer p {
     grid-row: 2;
     justify-content: stretch;
     order: 3;
+    flex-wrap: wrap;
   }
 
   nav button {
     flex: 1;
+    padding-inline: 0.65rem;
   }
 
   .github-link {
@@ -1425,6 +1555,15 @@ footer p {
   }
 
   .game-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .wishlist-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .wishlist-toolbar {
     grid-template-columns: 1fr;
   }
 
@@ -1506,6 +1645,19 @@ footer p {
 
   .stat-row {
     grid-template-columns: 1fr;
+  }
+
+  nav button {
+    min-width: calc(33.333% - 0.5rem);
+    font-size: 0.82rem;
+  }
+
+  .wishlist-card {
+    grid-template-columns: 1fr;
+  }
+
+  .wishlist-cover {
+    height: 220px;
   }
 }
 

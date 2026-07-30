@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { Inventory } from "../types";
+import type { Inventory, Wishlist } from "../types";
 
 const availabilitySchema = z.enum(["available", "loaned", "incomplete", "unavailable"]);
 const tableSpaceSchema = z.enum(["compact", "standard", "large"]);
@@ -171,4 +171,56 @@ export const inventorySchema = z
 
 export function parseInventory(value: unknown): Inventory {
   return inventorySchema.parse(value) as Inventory;
+}
+
+const wishlistGameSchema = z
+  .object({
+    slug: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+    bggId: z.number().int().positive().optional(),
+    sourceUrl: z.url().optional(),
+    name: z.string().min(1),
+    status: z.enum(["interested", "researching", "planned"]).default("interested"),
+    priority: z.number().int().min(1).max(5).optional(),
+    notes: z.string().min(1).optional()
+  })
+  .superRefine((game, context) => {
+    if (game.bggId === undefined && !game.sourceUrl) {
+      context.addIssue({
+        code: "custom",
+        message: "A wishlist item requires either bggId or sourceUrl.",
+        path: ["sourceUrl"]
+      });
+    }
+  });
+
+export const wishlistSchema = z
+  .object({
+    version: z.literal(1),
+    games: z.array(wishlistGameSchema)
+  })
+  .superRefine((wishlist, context) => {
+    const slugs = new Set<string>();
+    const bggIds = new Set<number>();
+    wishlist.games.forEach((game, index) => {
+      if (slugs.has(game.slug)) {
+        context.addIssue({
+          code: "custom",
+          message: `Duplicate wishlist slug: ${game.slug}`,
+          path: ["games", index, "slug"]
+        });
+      }
+      if (game.bggId !== undefined && bggIds.has(game.bggId)) {
+        context.addIssue({
+          code: "custom",
+          message: `Duplicate wishlist BGG ID: ${game.bggId}`,
+          path: ["games", index, "bggId"]
+        });
+      }
+      slugs.add(game.slug);
+      if (game.bggId !== undefined) bggIds.add(game.bggId);
+    });
+  });
+
+export function parseWishlist(value: unknown): Wishlist {
+  return wishlistSchema.parse(value) as Wishlist;
 }

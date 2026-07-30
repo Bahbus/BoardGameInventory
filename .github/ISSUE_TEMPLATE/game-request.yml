@@ -1,0 +1,39 @@
+name: Request a game
+description: Suggest an unowned game for the public wish list.
+title: "[Game request]: "
+labels: ["wishlist"]
+body:
+  - type: markdown
+    attributes:
+      value: Requests are public. Please check the library and open wish list before suggesting a duplicate.
+  - type: input
+    id: game-name
+    attributes:
+      label: Game name
+      placeholder: The game you would like the group to consider
+    validations:
+      required: true
+  - type: input
+    id: bgg-id
+    attributes:
+      label: BGG ID
+      description: Optional numeric ID from the BoardGameGeek URL.
+      placeholder: "68448"
+  - type: input
+    id: source-url
+    attributes:
+      label: Source URL
+      description: Optional publisher, crowdfunding, or product page.
+      placeholder: https://publisher.example/game
+  - type: textarea
+    id: reasons
+    attributes:
+      label: Why should we consider it?
+      description: Tell us what group, mood, mechanics, or experience makes this a good fit.
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Other notes
+      description: Edition, availability, price observations, or anything else useful.

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildIssueUrl } from "../../src/lib/maintenance";
+import { buildIssueUrl, buildWishlistIssueUrl } from "../../src/lib/maintenance";
 
 describe("maintenance request links", () => {
   it("prefills the matching GitHub issue form without empty values", () => {
@@ -33,5 +33,20 @@ describe("maintenance request links", () => {
     expect(url).toContain("slug=local-game");
     expect(url).toContain("source-url=https%3A%2F%2Fpublisher.example%2Flocal-game");
     expect(url).not.toContain("bgg-id");
+  });
+});
+
+describe("wishlist request links", () => {
+  it("opens the game-request issue form with only supplied fields", () => {
+    const url = buildWishlistIssueUrl("https://github.com/Bahbus/BoardGameInventory", {
+      bggId: "",
+      sourceUrl: "",
+      name: "Sky Team",
+      notes: ""
+    });
+    expect(url).toContain("template=game-request.yml");
+    expect(url).toContain("game-name=Sky+Team");
+    expect(url).not.toContain("bgg-id");
+    expect(url).not.toContain("source-url");
   });
 });
