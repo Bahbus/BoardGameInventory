@@ -47,7 +47,13 @@ describe("inventory matching manifest", () => {
       "matched-from-source"
     );
     expect(manifest.find((row) => row.slug === "buzzed-tower")?.matchStatus).toBe("local-only");
-    expect(manifest.find((row) => row.slug === "wingspan")?.matchStatus).toBe("pending-bgg-search");
+    expect(manifest.find((row) => row.slug === "wingspan")).toMatchObject({
+      matchStatus: "matched-from-source",
+      knownBggId: 266192
+    });
+    expect(manifest.find((row) => row.slug === "one-last-fight")?.matchStatus).toBe(
+      "pending-bgg-search"
+    );
     expect(manifest.find((row) => row.slug === "dice-throne-season-one")).toMatchObject({
       matchStatus: "matched-from-source",
       knownBggId: 216734
