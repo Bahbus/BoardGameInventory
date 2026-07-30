@@ -1,10 +1,7 @@
 import { createServer } from "node:http";
-import { createSetupService } from "./app";
-import { parseServiceConfig } from "./config";
-import { GitHubSetupGateway } from "./github";
+import { createConfiguredSetupService } from "./configuredApp";
 
-const config = parseServiceConfig(process.env);
-const app = createSetupService({ config, gateway: new GitHubSetupGateway(config) });
+const { app, config } = createConfiguredSetupService();
 const server = createServer(app);
 
 server.requestTimeout = 15_000;
