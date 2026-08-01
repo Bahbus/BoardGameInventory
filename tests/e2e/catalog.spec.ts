@@ -336,6 +336,27 @@ test("guides house answers one game at a time and keeps progress locally", async
       body: JSON.stringify({ schemaVersion: 2, sourceSha: setupSourceSha, games: setupGames })
     })
   );
+  await page.route("**/setup-suggestions.json", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        schemaVersion: 1,
+        sourceSha: setupSourceSha,
+        enriched: true,
+        suggestions: [
+          {
+            slug: "first-game",
+            bggId: 101,
+            moods: ["strategic"],
+            accessibilityFlags: ["memory-heavy"],
+            contentFlags: ["horror"],
+            categories: ["Horror"],
+            mechanics: ["Memory", "Worker Placement"]
+          }
+        ]
+      })
+    })
+  );
   await page.route("**/test-setup-service/api/setup/submit", (route) =>
     route.fulfill({
       contentType: "application/json",
@@ -351,6 +372,18 @@ test("guides house answers one game at a time and keeps progress locally", async
   await page.getByRole("button", { name: "Setup", exact: true }).click();
   await expect(page.getByText("Verified collaborator:")).toBeVisible();
   await expect(page.getByRole("heading", { name: "First Game" })).toBeVisible();
+  await expect(page.getByText("BGG suggestions are preselected.")).toBeVisible();
+  await expect(
+    page.getByRole("group", { name: "Mood or vibe" }).getByLabel("Strategic / thinky")
+  ).toBeChecked();
+  await expect(
+    page
+      .getByRole("group", { name: "Accessibility considerations" })
+      .getByLabel("Memory-heavy play")
+  ).toBeChecked();
+  await expect(
+    page.getByRole("group", { name: "Content considerations" }).getByLabel("Horror")
+  ).toBeChecked();
   await expect(page.getByText("Progress saves automatically in this browser.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Back up progress" })).toHaveCount(0);
   await expect(page.getByText("Restore progress", { exact: true })).toHaveCount(0);
