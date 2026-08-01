@@ -373,9 +373,9 @@ test("guides house answers one game at a time and keeps progress locally", async
   await expect(page.getByText("Verified collaborator:")).toBeVisible();
   await expect(page.getByRole("heading", { name: "First Game" })).toBeVisible();
   await expect(page.getByText("BGG suggestions are preselected.")).toBeVisible();
-  await expect(
-    page.getByRole("group", { name: "Mood or vibe" }).getByLabel("Strategic / thinky")
-  ).toBeChecked();
+  const moodGroup = page.getByRole("group", { name: "Mood or vibe" });
+  await expect(moodGroup.getByRole("checkbox")).toHaveCount(1);
+  await expect(moodGroup.getByLabel("Strategic / thinky")).toBeChecked();
   await expect(
     page
       .getByRole("group", { name: "Accessibility considerations" })
@@ -390,25 +390,36 @@ test("guides house answers one game at a time and keeps progress locally", async
   await page.getByLabel("Have you learned it?").selectOption("yes");
   await page.getByLabel("Overall house rating").selectOption("4");
   await page.getByLabel("Setup time").selectOption("11-20");
-  await page.getByRole("group", { name: "Mood or vibe" }).getByLabel("Strategic / thinky").check();
-  const otherMood = page
-    .getByRole("group", { name: "Mood or vibe" })
-    .getByLabel("Other (separate multiple tags with commas)");
+  await moodGroup.getByRole("button", { name: "Show 8 more" }).click();
+  await expect(moodGroup.locator(".setup-checkboxes span")).toHaveText([
+    "Casual / relaxed",
+    "Chaotic",
+    "Cozy",
+    "Immersive / thematic",
+    "Puzzly",
+    "Silly",
+    "Social",
+    "Strategic / thinky",
+    "Tense"
+  ]);
+  await moodGroup.getByLabel("Strategic / thinky").check();
+  const otherMood = moodGroup.getByLabel("Other (separate multiple tags with commas)");
   await otherMood.pressSequentially("nostalgic, contemplative");
   await expect(otherMood).toHaveValue("nostalgic, contemplative");
-  await page
-    .getByRole("group", { name: "Accessibility considerations" })
-    .getByLabel("Small text")
-    .check();
-  await page
-    .getByRole("group", { name: "Content considerations" })
-    .getByLabel("Mature themes")
-    .check();
+  const accessibilityGroup = page.getByRole("group", { name: "Accessibility considerations" });
+  await accessibilityGroup.getByRole("button", { name: "Show 6 more" }).click();
+  await accessibilityGroup.getByLabel("Small text").check();
+  const contentGroup = page.getByRole("group", { name: "Content considerations" });
+  await contentGroup.getByRole("button", { name: "Show 7 more" }).click();
+  await contentGroup.getByLabel("Mature themes").check();
   await expect(page.getByRole("group", { name: "Supported styles" })).toHaveCount(0);
   await page.getByRole("button", { name: "Save & next" }).click();
 
   await expect(page.getByRole("heading", { name: "Local Game" })).toBeVisible();
   await expect(page.getByText("1 of 2", { exact: true })).toBeVisible();
+  await expect(page.getByRole("group", { name: "Mood or vibe" }).getByRole("checkbox")).toHaveCount(
+    3
+  );
   await page.getByLabel("Have you learned it?").selectOption("no");
   await page.getByLabel("Minimum players").fill("2");
   await page.getByLabel("Maximum players").fill("8");
