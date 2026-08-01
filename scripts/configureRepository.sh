@@ -2,6 +2,28 @@
 set -euo pipefail
 
 repository="${1:-Bahbus/BoardGameInventory}"
+script_directory="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+policy_file="$script_directory/../config/repository-policy.json"
+
+if [[ ! "$repository" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]]; then
+  echo "Repository must use owner/name format." >&2
+  exit 1
+fi
+for command_name in gh jq; do
+  if ! command -v "$command_name" >/dev/null; then
+    echo "$command_name is required." >&2
+    exit 1
+  fi
+done
+gh auth status -h github.com >/dev/null
+jq -e . "$policy_file" >/dev/null
+
+apply_policy() {
+  local method="$1"
+  local endpoint="$2"
+  local selector="$3"
+  jq -c "$selector" "$policy_file" | gh api --method "$method" "$endpoint" --input - >/dev/null
+}
 
 for label in \
   "inventory:add|1d76db|Add an inventory item" \
@@ -15,42 +37,24 @@ for label in \
   gh label create "$name" --repo "$repository" --color "$color" --description "$description" --force
 done
 
-gh api --method POST "repos/$repository/pages" -f build_type=workflow >/dev/null 2>&1 || true
-gh api --method PUT "repos/$repository/actions/permissions" \
-  -F enabled=true \
-  -f allowed_actions=all
-gh api --method PUT "repos/$repository/actions/permissions/workflow" \
-  -f default_workflow_permissions=read \
-  -F can_approve_pull_request_reviews=true
-gh api --method PUT "repos/$repository/vulnerability-alerts" \
-  -H "Accept: application/vnd.github+json"
-gh api --method PUT "repos/$repository/automated-security-fixes" \
-  -H "Accept: application/vnd.github+json"
-gh api --method PUT "repos/$repository/private-vulnerability-reporting" \
-  -H "Accept: application/vnd.github+json"
-gh api --method PATCH "repos/$repository" \
-  -F has_issues=true \
-  -F "security_and_analysis[secret_scanning][status]=enabled" \
-  -F "security_and_analysis[secret_scanning_push_protection][status]=enabled"
-gh api --method PUT "repos/$repository/branches/main/protection" \
-  -H "Accept: application/vnd.github+json" \
-  --input - <<'JSON'
-{
-  "required_status_checks": {
-    "strict": true,
-    "contexts": ["verify"]
-  },
-  "enforce_admins": false,
-  "required_pull_request_reviews": null,
-  "restrictions": null,
-  "required_linear_history": false,
-  "allow_force_pushes": false,
-  "allow_deletions": false,
-  "block_creations": false,
-  "required_conversation_resolution": true,
-  "lock_branch": false,
-  "allow_fork_syncing": true
-}
-JSON
+if gh api "repos/$repository/pages" >/dev/null 2>&1; then
+  apply_policy PUT "repos/$repository/pages" '.pages'
+else
+  apply_policy POST "repos/$repository/pages" '.pages'
+fi
 
-echo "Configured labels, Pages, security alerts, secret scanning, workflow defaults, and main protection for $repository."
+apply_policy PUT "repos/$repository/actions/permissions" '.actionsPermissions'
+apply_policy PUT "repos/$repository/actions/permissions/selected-actions" '.selectedActions'
+apply_policy PUT "repos/$repository/actions/permissions/workflow" '.workflowPermissions'
+
+gh api --method PUT "repos/$repository/vulnerability-alerts" \
+  -H "Accept: application/vnd.github+json" >/dev/null
+gh api --method PUT "repos/$repository/automated-security-fixes" \
+  -H "Accept: application/vnd.github+json" >/dev/null
+gh api --method PUT "repos/$repository/private-vulnerability-reporting" \
+  -H "Accept: application/vnd.github+json" >/dev/null
+
+apply_policy PATCH "repos/$repository" '.repositoryPatch'
+apply_policy PUT "repos/$repository/branches/main/protection" '.branchProtection'
+
+echo "Configured labels, Pages, hardened Actions, security features, and main protection for $repository."
