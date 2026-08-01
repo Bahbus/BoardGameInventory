@@ -16,7 +16,7 @@ const setupGame = {
   learned: "",
   shelf: "",
   houseRating: "",
-  setupMinutes: "",
+  setupTimeRange: "",
   teachDifficulty: "",
   tableSpace: "",
   interaction: "",
@@ -286,7 +286,7 @@ test("guides house answers one game at a time and keeps progress locally", async
       learned: "",
       shelf: "",
       houseRating: "",
-      setupMinutes: "",
+      setupTimeRange: "",
       teachDifficulty: "",
       tableSpace: "",
       interaction: "",
@@ -311,7 +311,7 @@ test("guides house answers one game at a time and keeps progress locally", async
       learned: "",
       shelf: "",
       houseRating: "",
-      setupMinutes: "",
+      setupTimeRange: "",
       teachDifficulty: "",
       tableSpace: "",
       interaction: "",
@@ -333,7 +333,7 @@ test("guides house answers one game at a time and keeps progress locally", async
   await page.route("**/test-setup-service/api/setup/questionnaire", (route) =>
     route.fulfill({
       contentType: "application/json",
-      body: JSON.stringify({ schemaVersion: 1, sourceSha: setupSourceSha, games: setupGames })
+      body: JSON.stringify({ schemaVersion: 2, sourceSha: setupSourceSha, games: setupGames })
     })
   );
   await page.route("**/test-setup-service/api/setup/submit", (route) =>
@@ -356,6 +356,21 @@ test("guides house answers one game at a time and keeps progress locally", async
   await expect(page.getByText("Restore progress", { exact: true })).toHaveCount(0);
   await page.getByLabel("Have you learned it?").selectOption("yes");
   await page.getByLabel("Overall house rating").selectOption("4");
+  await page.getByLabel("Setup time").selectOption("11-20");
+  await page.getByRole("group", { name: "Mood or vibe" }).getByLabel("Strategic / thinky").check();
+  const otherMood = page
+    .getByRole("group", { name: "Mood or vibe" })
+    .getByLabel("Other (separate multiple tags with commas)");
+  await otherMood.pressSequentially("nostalgic, contemplative");
+  await expect(otherMood).toHaveValue("nostalgic, contemplative");
+  await page
+    .getByRole("group", { name: "Accessibility considerations" })
+    .getByLabel("Small text")
+    .check();
+  await page
+    .getByRole("group", { name: "Content considerations" })
+    .getByLabel("Mature themes")
+    .check();
   await expect(page.getByRole("group", { name: "Supported styles" })).toHaveCount(0);
   await page.getByRole("button", { name: "Save & next" }).click();
 
@@ -395,7 +410,7 @@ test("keeps the guided setup screen free of detectable accessibility violations"
     route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
-        schemaVersion: 1,
+        schemaVersion: 2,
         sourceSha: setupSourceSha,
         games: [setupGame]
       })

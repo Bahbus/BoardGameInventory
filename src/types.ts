@@ -1,6 +1,8 @@
 export type Availability = "available" | "loaned" | "incomplete" | "unavailable";
 export type TableSpace = "compact" | "standard" | "large";
 export type GameMode = "competitive" | "cooperative" | "team" | "solo";
+export type { SetupTimeRange } from "./lib/houseOptions";
+import type { SetupTimeRange } from "./lib/houseOptions";
 export type SortKey = "name" | "bggRating" | "complexity" | "duration" | "players" | "houseRating";
 
 export interface ValueOverrides {
@@ -13,7 +15,7 @@ export interface ValueOverrides {
 
 export interface HouseEvaluation {
   rating?: number;
-  setupMinutes?: number;
+  setupTimeRange?: SetupTimeRange;
   teachDifficulty?: number;
   tableSpace?: TableSpace;
   interaction?: number;

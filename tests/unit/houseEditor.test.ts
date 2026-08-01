@@ -15,7 +15,7 @@ const answer = (overrides: Partial<HouseAnswer> = {}): HouseAnswer => ({
   learned: "",
   shelf: "",
   houseRating: "",
-  setupMinutes: "",
+  setupTimeRange: "",
   teachDifficulty: "",
   tableSpace: "",
   interaction: "",
@@ -39,16 +39,16 @@ const sourceSha = "a".repeat(40);
 describe("browser house editor", () => {
   it("validates the generated dataset and rejects duplicate slugs", () => {
     expect(
-      parseHouseEditorDataset({ schemaVersion: 1, sourceSha, games: [answer()] }).games[0].title
+      parseHouseEditorDataset({ schemaVersion: 2, sourceSha, games: [answer()] }).games[0].title
     ).toBe("Example Game");
     expect(() =>
-      parseHouseEditorDataset({ schemaVersion: 1, sourceSha, games: [answer(), answer()] })
+      parseHouseEditorDataset({ schemaVersion: 2, sourceSha, games: [answer(), answer()] })
     ).toThrow(/repeats example-game/);
   });
 
   it("sorts questionnaire games alphabetically for navigation", () => {
     const games = parseHouseEditorDataset({
-      schemaVersion: 1,
+      schemaVersion: 2,
       sourceSha,
       games: [
         answer({ slug: "zulu", title: "Zulu" }),
@@ -63,14 +63,14 @@ describe("browser house editor", () => {
   it("accepts versioned stored progress and rejects malformed progress", () => {
     expect(
       parseSavedHouseProgress({
-        schemaVersion: 1,
+        schemaVersion: 2,
         answers: { "example-game": { learned: "yes" } },
         completedSlugs: ["example-game"]
       }).completedSlugs
     ).toEqual(["example-game"]);
     expect(() =>
       parseSavedHouseProgress({
-        schemaVersion: 1,
+        schemaVersion: 2,
         answers: [],
         completedSlugs: ["example-game"]
       })
@@ -79,7 +79,7 @@ describe("browser house editor", () => {
 
   it("merges saved answers without allowing identity fields to drift", () => {
     const [merged] = mergeHouseProgress([answer()], {
-      schemaVersion: 1,
+      schemaVersion: 2,
       completedSlugs: ["example-game"],
       answers: {
         "example-game": {

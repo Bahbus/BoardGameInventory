@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { inventoryFromCsv } from "../../scripts/inventoryFromCsv";
 
 const header =
-  "kind,slug,bgg_id,source_url,name,parent_slug,parent_bgg_id,standalone,edition,quantity,shelf,availability,learned,house_rating,setup_minutes,teach_difficulty,table_space,interaction,luck,downtime,modes,moods,accessibility_flags,content_flags,recommendation_notes,override_min_players,override_max_players,override_min_minutes,override_max_minutes,override_min_age";
+  "kind,slug,bgg_id,source_url,name,parent_slug,parent_bgg_id,standalone,edition,quantity,shelf,availability,learned,house_rating,setup_time_range,teach_difficulty,table_space,interaction,luck,downtime,modes,moods,accessibility_flags,content_flags,recommendation_notes,override_min_players,override_max_players,override_min_minutes,override_max_minutes,override_min_age";
 
 const row = (values: Record<string, string>) =>
   header
@@ -35,6 +35,18 @@ describe("CSV inventory import", () => {
     const orphan = `${header}\nexpansion,orphan,2,,Orphan,missing,,false,,1,,available,false,,,,,,,,,,,,,,,,,\n`;
 
     expect(() => inventoryFromCsv(orphan)).toThrow(/Row 2: the expansion parent was not imported/);
+  });
+
+  it("reports an invalid setup-time range on its source row", () => {
+    const source = `${header}\n${row({
+      kind: "game",
+      slug: "bad-setup",
+      bgg_id: "1",
+      name: "Bad Setup",
+      setup_time_range: "about ten"
+    })}\n`;
+
+    expect(() => inventoryFromCsv(source)).toThrow(/Row 2: setup_time_range is invalid/);
   });
 
   it("lets a non-standalone local expansion inherit its imported parent's filter values", () => {

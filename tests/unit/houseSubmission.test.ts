@@ -12,7 +12,7 @@ const row = (overrides: Partial<HouseIntakeRow> = {}): HouseIntakeRow => ({
   learned: "",
   shelf: "",
   houseRating: "",
-  setupMinutes: "",
+  setupTimeRange: "",
   teachDifficulty: "",
   tableSpace: "",
   interaction: "",
@@ -35,7 +35,7 @@ const row = (overrides: Partial<HouseIntakeRow> = {}): HouseIntakeRow => ({
 describe("guided setup submissions", () => {
   it("creates a versioned questionnaire tied to the source blob", () => {
     expect(questionnaireFromCsv(SOURCE_SHA, houseIntakeToCsv([row()]))).toMatchObject({
-      schemaVersion: 1,
+      schemaVersion: 2,
       sourceSha: SOURCE_SHA,
       games: [{ slug: "example-game", title: "Example Game" }]
     });
@@ -48,6 +48,16 @@ describe("guided setup submissions", () => {
     ]);
     const result = validateHouseSubmission(current, submitted);
     expect(result.csv).toBe(submitted);
+  });
+
+  it("rejects setup-time values outside the shared range contract", () => {
+    const current = houseIntakeToCsv([row()]);
+    expect(() =>
+      validateHouseSubmission(
+        current,
+        houseIntakeToCsv([row({ learned: "yes", setupTimeRange: "sometimes quick" })])
+      )
+    ).toThrow(/setup_time_range/);
   });
 
   it("accepts alphabetized browser rows while preserving canonical source order", () => {

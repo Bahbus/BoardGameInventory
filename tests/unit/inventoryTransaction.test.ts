@@ -65,7 +65,7 @@ describe("inventory issue transactions", () => {
         Availability: "available",
         Learned: "Yes",
         "House rating": "4.5",
-        "Setup minutes": "10",
+        "Setup time range": "5-10",
         "Teach difficulty": "2",
         Modes: "competitive;team"
       })
@@ -74,7 +74,7 @@ describe("inventory issue transactions", () => {
     expect(result.games.find((game) => game.slug === "new-game")).toMatchObject({
       bggId: 300,
       learned: true,
-      house: { rating: 4.5, setupMinutes: 10, modes: ["competitive", "team"] }
+      house: { rating: 4.5, setupTimeRange: "5-10", modes: ["competitive", "team"] }
     });
   });
 
@@ -200,6 +200,16 @@ describe("inventory issue transactions", () => {
         Modes: "duel"
       }),
       /Modes contains invalid/
+    ],
+    [
+      "invalid setup-time range",
+      issueBody({
+        "Game name": "Invalid",
+        "Stable slug": "invalid",
+        "BGG ID": "400",
+        "Setup time range": "ten-ish"
+      }),
+      /Setup time range must be one of/
     ],
     [
       "missing parent",

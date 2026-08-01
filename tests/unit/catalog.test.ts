@@ -95,6 +95,14 @@ describe("catalog filtering and scoring", () => {
     expect(result.rouletteWeight).toBe(5);
   });
 
+  it("compares setup-time ranges using their conservative upper bounds", () => {
+    const withinLimit = scoreGame(forest, { ...DEFAULT_PREFERENCES, maxSetupMinutes: 10 });
+    const tighterLimit = scoreGame(forest, { ...DEFAULT_PREFERENCES, maxSetupMinutes: 5 });
+
+    expect(withinLimit.components.find((component) => component.key === "setup")?.score).toBe(1);
+    expect(tighterLimit.components.find((component) => component.key === "setup")?.score).toBe(0);
+  });
+
   it("draws deterministically and resets exclusions after exhaustion", () => {
     const games = filterAndScore([forest, racers], DEFAULT_PREFERENCES);
     expect(weightedDraw(games, new Set(), () => 0)?.game.slug).toBe("forest-council");

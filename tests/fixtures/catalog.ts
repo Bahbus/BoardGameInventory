@@ -17,7 +17,7 @@ export const catalogFixture: CatalogPayload = {
       learned: true,
       house: {
         rating: 5,
-        setupMinutes: 8,
+        setupTimeRange: "5-10",
         teachDifficulty: 2,
         tableSpace: "standard",
         interaction: 4,
@@ -103,7 +103,7 @@ export const catalogFixture: CatalogPayload = {
       learned: false,
       house: {
         rating: 3,
-        setupMinutes: 3,
+        setupTimeRange: "under-5",
         teachDifficulty: 1,
         tableSpace: "compact",
         interaction: 3,

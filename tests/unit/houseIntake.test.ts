@@ -72,4 +72,14 @@ describe("house-data questionnaire", () => {
     );
     expect(() => validateHouseIntakeCsv(source)).toThrow(/house_rating/);
   });
+
+  it("accepts only documented setup-time ranges", async () => {
+    const manifest = parseMatchingManifest(await readFile("data/inventory.matching.csv", "utf8"));
+    const rows = buildHouseIntake(manifest);
+    rows[0].setupTimeRange = "11-20";
+    expect(validateHouseIntakeCsv(houseIntakeToCsv(rows))[0].setupTimeRange).toBe("11-20");
+
+    rows[0].setupTimeRange = "about fifteen";
+    expect(() => validateHouseIntakeCsv(houseIntakeToCsv(rows))).toThrow(/setup_time_range/);
+  });
 });

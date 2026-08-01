@@ -5,9 +5,11 @@ import type {
   Inventory,
   InventoryGame,
   OwnedExpansion,
+  SetupTimeRange,
   TableSpace,
   ValueOverrides
 } from "../src/types";
+import { SETUP_TIME_RANGE_VALUES } from "../src/lib/houseOptions";
 import { fieldsFromIssue } from "./issueRequest";
 
 export type InventoryOperation = "add" | "update" | "remove";
@@ -83,6 +85,12 @@ const optionalTableSpace = (value: string | undefined) => {
   if (!value) return undefined;
   if (tableSpaceValues.includes(value as TableSpace)) return value as TableSpace;
   throw new Error(`Table space must be one of: ${tableSpaceValues.join(", ")}.`);
+};
+
+const optionalSetupTimeRange = (value: string | undefined) => {
+  if (!value) return undefined;
+  if (SETUP_TIME_RANGE_VALUES.some((range) => range === value)) return value as SetupTimeRange;
+  throw new Error(`Setup time range must be one of: ${SETUP_TIME_RANGE_VALUES.join(", ")}.`);
 };
 
 const list = (value: string | undefined) =>
@@ -222,7 +230,7 @@ export function applyInventoryTransaction(
         ...shared,
         house: {
           rating: optionalRating(fields.get("House rating"), "House rating"),
-          setupMinutes: optionalNonnegativeInteger(fields.get("Setup minutes"), "Setup minutes"),
+          setupTimeRange: optionalSetupTimeRange(fields.get("Setup time range")),
           teachDifficulty: optionalRating(fields.get("Teach difficulty"), "Teach difficulty"),
           tableSpace: optionalTableSpace(fields.get("Table space")),
           interaction: optionalRating(fields.get("Interaction"), "Interaction"),
@@ -252,14 +260,14 @@ export function applyInventoryTransaction(
       applyUpdate(target, fields);
       if (found.kind === "game") {
         const rating = optionalRating(fields.get("House rating"), "House rating");
-        const setup = optionalNonnegativeInteger(fields.get("Setup minutes"), "Setup minutes");
+        const setup = optionalSetupTimeRange(fields.get("Setup time range"));
         const teach = optionalRating(fields.get("Teach difficulty"), "Teach difficulty");
         const tableSpace = optionalTableSpace(fields.get("Table space"));
         const interaction = optionalRating(fields.get("Interaction"), "Interaction");
         const luck = optionalRating(fields.get("Luck"), "Luck");
         const downtime = optionalRating(fields.get("Downtime"), "Downtime");
         if (rating !== undefined) found.base.house.rating = rating;
-        if (setup !== undefined) found.base.house.setupMinutes = setup;
+        if (setup !== undefined) found.base.house.setupTimeRange = setup;
         if (teach !== undefined) found.base.house.teachDifficulty = teach;
         if (tableSpace !== undefined) found.base.house.tableSpace = tableSpace;
         if (interaction !== undefined) found.base.house.interaction = interaction;

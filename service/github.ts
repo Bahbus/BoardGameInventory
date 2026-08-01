@@ -29,7 +29,7 @@ const logGitHubFailure = (message: string, error: unknown) => {
 };
 
 export interface Questionnaire {
-  schemaVersion: 1;
+  schemaVersion: 2;
   sourceSha: string;
   games: ReturnType<typeof questionnaireFromCsv>["games"];
 }

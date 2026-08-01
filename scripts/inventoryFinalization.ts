@@ -148,7 +148,7 @@ function validateManifest(rows: MatchingRow[]): void {
 function houseEvaluation(row: HouseIntakeRow): HouseEvaluation {
   return {
     rating: number(row.houseRating),
-    setupMinutes: number(row.setupMinutes),
+    setupTimeRange: optional(row.setupTimeRange) as HouseEvaluation["setupTimeRange"],
     teachDifficulty: number(row.teachDifficulty),
     tableSpace: optional(row.tableSpace) as TableSpace | undefined,
     interaction: number(row.interaction),
