@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { SETUP_TIME_RANGE_VALUES } from "./houseOptions";
 import type { Inventory, Wishlist } from "../types";
 
 const availabilitySchema = z.enum(["available", "loaned", "incomplete", "unavailable"]);
@@ -104,7 +105,7 @@ const gameSchema = z
     house: z
       .object({
         rating: z.number().min(1).max(5).optional(),
-        setupMinutes: z.number().int().nonnegative().optional(),
+        setupTimeRange: z.enum(SETUP_TIME_RANGE_VALUES as [string, ...string[]]).optional(),
         teachDifficulty: z.number().min(1).max(5).optional(),
         tableSpace: tableSpaceSchema.optional(),
         interaction: z.number().min(1).max(5).optional(),

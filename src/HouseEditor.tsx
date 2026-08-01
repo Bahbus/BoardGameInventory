@@ -14,8 +14,15 @@ import {
   submitHouseAnswers,
   type SetupSubmission
 } from "./lib/setupAccess";
+import {
+  ACCESSIBILITY_OPTIONS,
+  CONTENT_OPTIONS,
+  MOOD_OPTIONS,
+  SETUP_TIME_RANGES,
+  type HouseTagOption
+} from "./lib/houseOptions";
 
-const STORAGE_KEY = "board-game-inventory:house-progress:v1";
+const STORAGE_KEY = "board-game-inventory:house-progress:v2";
 
 const readProgress = (): SavedHouseProgress => {
   try {
@@ -68,11 +75,68 @@ function RatingField({
   );
 }
 
-const selectedModes = (value: string) =>
+const selectedTags = (value: string) =>
   value
     .split(/[;,]/)
     .map((item) => item.trim())
     .filter(Boolean);
+
+function TagCheckboxField({
+  legend,
+  help,
+  value,
+  options,
+  onChange
+}: {
+  legend: string;
+  help: string;
+  value: string;
+  options: readonly HouseTagOption[];
+  onChange: (value: string) => void;
+}) {
+  const selected = selectedTags(value);
+  const knownValues = new Set(options.map((option) => option.value));
+  const custom = selected.filter((tag) => !knownValues.has(tag));
+  const [customInput, setCustomInput] = useState(custom.join(", "));
+  const setKnownValue = (tag: string, checked: boolean) => {
+    const next = checked
+      ? [...selected.filter((value) => value !== tag), tag]
+      : selected.filter((value) => value !== tag);
+    onChange(next.join(";"));
+  };
+  const setCustomValues = (input: string) => {
+    setCustomInput(input);
+    const known = selected.filter((tag) => knownValues.has(tag));
+    onChange([...known, ...selectedTags(input)].join(";"));
+  };
+
+  return (
+    <fieldset class="setup-tag-field wide">
+      <legend>{legend}</legend>
+      <p>{help}</p>
+      <div class="setup-checkboxes">
+        {options.map((option) => (
+          <label key={option.value}>
+            <input
+              type="checkbox"
+              checked={selected.includes(option.value)}
+              onChange={(event) => setKnownValue(option.value, event.currentTarget.checked)}
+            />
+            <span>{option.label}</span>
+          </label>
+        ))}
+      </div>
+      <label class="setup-other-tag">
+        Other (separate multiple tags with commas)
+        <input
+          value={customInput}
+          onInput={(event) => setCustomValues(event.currentTarget.value)}
+          placeholder="Add another consideration…"
+        />
+      </label>
+    </fieldset>
+  );
+}
 
 export function HouseEditor({
   serviceUrl,
@@ -175,7 +239,7 @@ export function HouseEditor({
 
   const toggleMode = (mode: string) => {
     if (!current) return;
-    const selected = selectedModes(current.modes);
+    const selected = selectedTags(current.modes);
     update(
       "modes",
       selected.includes(mode)
@@ -365,15 +429,18 @@ export function HouseEditor({
               onChange={(value) => update("houseRating", value)}
             />
             <label>
-              Setup time in minutes
-              <input
-                type="number"
-                min="0"
-                inputMode="numeric"
-                value={current.setupMinutes}
-                onInput={(event) => update("setupMinutes", event.currentTarget.value)}
-                placeholder="Not sure"
-              />
+              Setup time
+              <select
+                value={current.setupTimeRange}
+                onChange={(event) => update("setupTimeRange", event.currentTarget.value)}
+              >
+                <option value="">Not sure yet</option>
+                {SETUP_TIME_RANGES.map((option) => (
+                  <option value={option.value} key={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
             </label>
             <RatingField
               label="Teaching difficulty"
@@ -431,7 +498,7 @@ export function HouseEditor({
                   <label key={value}>
                     <input
                       type="checkbox"
-                      checked={selectedModes(current.modes).includes(value)}
+                      checked={selectedTags(current.modes).includes(value)}
                       onChange={() => toggleMode(value)}
                     />
                     {label}
@@ -439,30 +506,30 @@ export function HouseEditor({
                 ))}
               </fieldset>
             ) : null}
-            <label>
-              Mood or vibe
-              <input
-                value={current.moods}
-                onInput={(event) => update("moods", event.currentTarget.value)}
-                placeholder="Cozy, strategic, silly…"
-              />
-            </label>
-            <label>
-              Accessibility considerations
-              <input
-                value={current.accessibilityFlags}
-                onInput={(event) => update("accessibilityFlags", event.currentTarget.value)}
-                placeholder="Small text, color dependent…"
-              />
-            </label>
-            <label>
-              Content considerations
-              <input
-                value={current.contentFlags}
-                onInput={(event) => update("contentFlags", event.currentTarget.value)}
-                placeholder="Alcohol, horror, mature themes…"
-              />
-            </label>
+            <TagCheckboxField
+              key={`moods-${current.slug}`}
+              legend="Mood or vibe"
+              help="Choose every description that feels like a good fit."
+              value={current.moods}
+              options={MOOD_OPTIONS}
+              onChange={(value) => update("moods", value)}
+            />
+            <TagCheckboxField
+              key={`accessibility-${current.slug}`}
+              legend="Accessibility considerations"
+              help="Choose traits that could affect whether someone can comfortably play."
+              value={current.accessibilityFlags}
+              options={ACCESSIBILITY_OPTIONS}
+              onChange={(value) => update("accessibilityFlags", value)}
+            />
+            <TagCheckboxField
+              key={`content-${current.slug}`}
+              legend="Content considerations"
+              help="Choose themes people may want to know about before game night."
+              value={current.contentFlags}
+              options={CONTENT_OPTIONS}
+              onChange={(value) => update("contentFlags", value)}
+            />
             <label class="wide">
               Recommendation notes
               <textarea

@@ -6,6 +6,7 @@ import type {
   ScoredGame,
   TableSpace
 } from "../types";
+import { setupTimeComparisonMinutes } from "./houseOptions";
 
 const TABLE_SPACE_RANK: Record<TableSpace, number> = {
   compact: 1,
@@ -201,7 +202,9 @@ export function scoreGame(game: CatalogGame, preferences: GroupPreferences): Sco
     );
   }
   if (preferences.maxSetupMinutes !== undefined) {
-    const setup = game.house.setupMinutes;
+    const setup = game.house.setupTimeRange
+      ? setupTimeComparisonMinutes(game.house.setupTimeRange)
+      : undefined;
     add(
       components,
       "setup",

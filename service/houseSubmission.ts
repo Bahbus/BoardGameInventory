@@ -3,6 +3,7 @@ import {
   validateHouseIntakeCsv,
   type HouseIntakeRow
 } from "../scripts/houseIntake";
+import { SETUP_TIME_RANGE_VALUES } from "../src/lib/houseOptions";
 
 const FORMULA_PREFIX = /^[\t\r ]*[=+\-@]/;
 const INTEGER = /^\d+$/;
@@ -10,7 +11,6 @@ const TEXT_LIMIT = 2_000;
 const LIST_LIMIT = 500;
 
 const numericFields = [
-  "setupMinutes",
   "localMinPlayers",
   "localMaxPlayers",
   "localMinMinutes",
@@ -21,7 +21,6 @@ const numericFields = [
 const textFields = ["shelf", "recommendationNotes"] as const;
 const listFields = ["moods", "accessibilityFlags", "contentFlags"] as const;
 const numericLimits: Record<(typeof numericFields)[number], [number, number]> = {
-  setupMinutes: [0, 1_440],
   localMinPlayers: [1, 99],
   localMaxPlayers: [1, 99],
   localMinMinutes: [1, 10_080],
@@ -67,6 +66,12 @@ export function validateHouseSubmission(currentCsv: string, submittedCsv: string
     }
     if (!["yes", "no"].includes(answer.learned)) {
       throw new Error(`House intake row ${row} must state whether the game is learned.`);
+    }
+    if (
+      answer.setupTimeRange &&
+      !SETUP_TIME_RANGE_VALUES.some((value) => value === answer.setupTimeRange)
+    ) {
+      throw new Error(`House intake row ${row} has an invalid setupTimeRange.`);
     }
     const modes = answer.modes
       .split(";")
@@ -122,7 +127,7 @@ export function validateHouseSubmission(currentCsv: string, submittedCsv: string
 }
 
 export const questionnaireFromCsv = (sourceSha: string, csv: string) => ({
-  schemaVersion: 1 as const,
+  schemaVersion: 2 as const,
   sourceSha,
   games: validateHouseIntakeCsv(csv)
 });

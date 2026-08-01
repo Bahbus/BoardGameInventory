@@ -86,7 +86,7 @@ function completedHouseCsv(rows = manifest()) {
             shelf: "Shelf A",
             availability: "loaned",
             houseRating: "5",
-            setupMinutes: "12",
+            setupTimeRange: "11-20",
             teachDifficulty: "2",
             tableSpace: "standard",
             interaction: "4",
@@ -129,7 +129,7 @@ describe("inventory finalization", () => {
       ownershipNotes: "Owned copy confirmed.",
       house: {
         rating: 5,
-        setupMinutes: 12,
+        setupTimeRange: "11-20",
         teachDifficulty: 2,
         tableSpace: "standard",
         interaction: 4,

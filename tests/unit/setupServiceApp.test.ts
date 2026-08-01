@@ -25,7 +25,7 @@ const gatewayFixture = () => {
     }),
     exchangeAndVerifyUser: vi.fn(async () => ({ login: "Bahbus" })),
     getQuestionnaire: vi.fn(async () => ({
-      schemaVersion: 1 as const,
+      schemaVersion: 2 as const,
       sourceSha: SOURCE_SHA,
       games: []
     })),

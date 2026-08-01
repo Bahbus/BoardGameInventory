@@ -14,7 +14,7 @@ const row = (overrides: Partial<HouseIntakeRow> = {}): HouseIntakeRow => ({
   learned: "",
   shelf: "",
   houseRating: "",
-  setupMinutes: "",
+  setupTimeRange: "",
   teachDifficulty: "",
   tableSpace: "",
   interaction: "",

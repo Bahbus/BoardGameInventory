@@ -1,4 +1,4 @@
-slug,title,availability,learned,shelf,house_rating,setup_minutes,teach_difficulty,table_space,interaction,luck,downtime,modes,moods,accessibility_flags,content_flags,recommendation_notes,local_values_required,local_min_players,local_max_players,local_min_minutes,local_max_minutes,local_min_age
+slug,title,availability,learned,shelf,house_rating,setup_time_range,teach_difficulty,table_space,interaction,luck,downtime,modes,moods,accessibility_flags,content_flags,recommendation_notes,local_values_required,local_min_players,local_max_players,local_min_minutes,local_max_minutes,local_min_age
 7-wonders-duel,7 Wonders Duel,available,,,,,,,,,,,,,,,no,,,,,
 agricola-revised-edition,Agricola (Revised Edition),available,,,,,,,,,,,,,,,no,,,,,
 anomia,Anomia,available,,,,,,,,,,,,,,,no,,,,,

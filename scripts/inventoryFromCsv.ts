@@ -4,10 +4,12 @@ import type {
   Inventory,
   InventoryGame,
   OwnedExpansion,
+  SetupTimeRange,
   TableSpace,
   ValueOverrides
 } from "../src/types";
 import { parseInventory } from "../src/lib/schema";
+import { SETUP_TIME_RANGE_VALUES } from "../src/lib/houseOptions";
 import { csvRecords } from "./csv";
 
 const list = (value: string) =>
@@ -48,6 +50,14 @@ export function inventoryFromCsv(source: string): Inventory {
       return;
     }
     const rowOverrides = overrides(row);
+    const setupTimeRange = optional(row.setup_time_range);
+    if (
+      setupTimeRange &&
+      !SETUP_TIME_RANGE_VALUES.some((candidate) => candidate === setupTimeRange)
+    ) {
+      rowErrors.push(`Row ${rowNumber}: setup_time_range is invalid.`);
+      return;
+    }
     if (bggId === undefined) {
       const missing = [
         ["source_url", row.source_url],
@@ -83,7 +93,7 @@ export function inventoryFromCsv(source: string): Inventory {
         learned: boolean(row.learned),
         house: {
           rating: number(row.house_rating),
-          setupMinutes: number(row.setup_minutes),
+          setupTimeRange: setupTimeRange as SetupTimeRange | undefined,
           teachDifficulty: number(row.teach_difficulty),
           tableSpace: optional(row.table_space) as TableSpace | undefined,
           interaction: number(row.interaction),

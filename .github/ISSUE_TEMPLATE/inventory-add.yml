@@ -84,10 +84,18 @@ body:
     attributes:
       label: House rating
       description: Optional rating from 1 to 5.
-  - type: input
-    id: setup-minutes
+  - type: dropdown
+    id: setup-time-range
     attributes:
-      label: Setup minutes
+      label: Setup time range
+      options:
+        - under-5
+        - 5-10
+        - 11-20
+        - 21-30
+        - 31-45
+        - 46-60
+        - over-60
   - type: input
     id: teach-difficulty
     attributes:

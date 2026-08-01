@@ -1,5 +1,6 @@
 import { parseCsv, recordsToCsv } from "./csv";
 import type { MatchingRow } from "./intakeMatching";
+import { SETUP_TIME_RANGE_VALUES } from "../src/lib/houseOptions";
 
 export const HOUSE_INTAKE_HEADERS = [
   "slug",
@@ -8,7 +9,7 @@ export const HOUSE_INTAKE_HEADERS = [
   "learned",
   "shelf",
   "house_rating",
-  "setup_minutes",
+  "setup_time_range",
   "teach_difficulty",
   "table_space",
   "interaction",
@@ -34,7 +35,7 @@ export interface HouseIntakeRow {
   learned: string;
   shelf: string;
   houseRating: string;
-  setupMinutes: string;
+  setupTimeRange: string;
   teachDifficulty: string;
   tableSpace: string;
   interaction: string;
@@ -83,7 +84,7 @@ export function buildHouseIntake(manifest: MatchingRow[]): HouseIntakeRow[] {
         learned: "",
         shelf: "",
         houseRating: "",
-        setupMinutes: "",
+        setupTimeRange: "",
         teachDifficulty: "",
         tableSpace: "",
         interaction: "",
@@ -114,7 +115,7 @@ export function houseIntakeToCsv(rows: HouseIntakeRow[]): string {
       learned: row.learned,
       shelf: row.shelf,
       house_rating: row.houseRating,
-      setup_minutes: row.setupMinutes,
+      setup_time_range: row.setupTimeRange,
       teach_difficulty: row.teachDifficulty,
       table_space: row.tableSpace,
       interaction: row.interaction,
@@ -162,6 +163,12 @@ export function validateHouseIntakeCsv(source: string): HouseIntakeRow[] {
     if (record.table_space && !["compact", "standard", "large"].includes(record.table_space)) {
       throw new Error(`House intake row ${index + 2} has invalid table_space.`);
     }
+    if (
+      record.setup_time_range &&
+      !SETUP_TIME_RANGE_VALUES.some((value) => value === record.setup_time_range)
+    ) {
+      throw new Error(`House intake row ${index + 2} has invalid setup_time_range.`);
+    }
     for (const field of [
       "house_rating",
       "teach_difficulty",
@@ -181,7 +188,7 @@ export function validateHouseIntakeCsv(source: string): HouseIntakeRow[] {
       learned: record.learned,
       shelf: record.shelf,
       houseRating: record.house_rating,
-      setupMinutes: record.setup_minutes,
+      setupTimeRange: record.setup_time_range,
       teachDifficulty: record.teach_difficulty,
       tableSpace: record.table_space,
       interaction: record.interaction,

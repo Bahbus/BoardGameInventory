@@ -13,7 +13,7 @@ const output = new URL("../outputs/house-intake.json", import.meta.url);
 await mkdir(new URL("../outputs/", import.meta.url), { recursive: true });
 await writeFile(
   output,
-  `${JSON.stringify({ schemaVersion: 1, sourceSha, games }, null, 2)}\n`,
+  `${JSON.stringify({ schemaVersion: 2, sourceSha, games }, null, 2)}\n`,
   "utf8"
 );
 console.log(`Generated private setup-service questionnaire for ${games.length} games.`);

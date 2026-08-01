@@ -5,7 +5,7 @@ export const HOUSE_ANSWER_HEADERS = [
   "learned",
   "shelf",
   "house_rating",
-  "setup_minutes",
+  "setup_time_range",
   "teach_difficulty",
   "table_space",
   "interaction",
@@ -31,7 +31,7 @@ export interface HouseAnswer {
   learned: string;
   shelf: string;
   houseRating: string;
-  setupMinutes: string;
+  setupTimeRange: string;
   teachDifficulty: string;
   tableSpace: string;
   interaction: string;
@@ -51,19 +51,19 @@ export interface HouseAnswer {
 }
 
 export interface HouseEditorDataset {
-  schemaVersion: 1;
+  schemaVersion: 2;
   sourceSha: string;
   games: HouseAnswer[];
 }
 
 export interface SavedHouseProgress {
-  schemaVersion: 1;
+  schemaVersion: 2;
   answers: Record<string, Partial<HouseAnswer>>;
   completedSlugs: string[];
 }
 
 export const EMPTY_PROGRESS: SavedHouseProgress = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   answers: {},
   completedSlugs: []
 };
@@ -73,7 +73,7 @@ export function parseSavedHouseProgress(value: unknown): SavedHouseProgress {
     typeof value !== "object" ||
     value === null ||
     !("schemaVersion" in value) ||
-    value.schemaVersion !== 1 ||
+    value.schemaVersion !== 2 ||
     !("answers" in value) ||
     typeof value.answers !== "object" ||
     value.answers === null ||
@@ -95,7 +95,7 @@ export function parseHouseEditorDataset(value: unknown): HouseEditorDataset {
     typeof value !== "object" ||
     value === null ||
     !("schemaVersion" in value) ||
-    value.schemaVersion !== 1 ||
+    value.schemaVersion !== 2 ||
     !("sourceSha" in value) ||
     typeof value.sourceSha !== "string" ||
     !/^[a-f0-9]{40}$/.test(value.sourceSha) ||
@@ -126,7 +126,7 @@ export function parseHouseEditorDataset(value: unknown): HouseEditorDataset {
     .sort((left, right) =>
       left.title.localeCompare(right.title, "en", { numeric: true, sensitivity: "base" })
     );
-  return { schemaVersion: 1, sourceSha: value.sourceSha, games };
+  return { schemaVersion: 2, sourceSha: value.sourceSha, games };
 }
 
 export function mergeHouseProgress(
@@ -183,7 +183,7 @@ export function houseAnswersToCsv(games: HouseAnswer[]): string {
     game.learned,
     game.shelf,
     game.houseRating,
-    game.setupMinutes,
+    game.setupTimeRange,
     game.teachDifficulty,
     game.tableSpace,
     game.interaction,
