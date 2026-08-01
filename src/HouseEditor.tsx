@@ -146,7 +146,37 @@ function TagCheckboxField({
   return (
     <fieldset class="setup-tag-field wide">
       <legend>{legend}</legend>
-      <p>{help}</p>
+      <div class="setup-tag-heading">
+        <p>{help}</p>
+        {hiddenCount || expanded ? (
+          <button
+            type="button"
+            class="setup-options-toggle"
+            aria-expanded={expanded}
+            aria-label={
+              expanded
+                ? `Show fewer ${legend.toLocaleLowerCase()} options`
+                : `Show all ${orderedOptions.length} ${legend.toLocaleLowerCase()} options`
+            }
+            onClick={() => {
+              if (expanded) {
+                setCompactValues(
+                  (selectedKnown.length ? selectedKnown : orderedOptions.slice(0, 3)).map(
+                    (option) => option.value
+                  )
+                );
+              }
+              setExpanded(!expanded);
+            }}
+          >
+            <span>{expanded ? "Show fewer" : "Show all"}</span>
+            {!expanded ? <span class="setup-options-count">{orderedOptions.length}</span> : null}
+            <span class="setup-options-chevron" aria-hidden="true">
+              {expanded ? "▴" : "▾"}
+            </span>
+          </button>
+        ) : null}
+      </div>
       <div class="setup-checkboxes">
         {visibleOptions.map((option) => (
           <label key={option.value}>
@@ -159,25 +189,6 @@ function TagCheckboxField({
           </label>
         ))}
       </div>
-      {hiddenCount || expanded ? (
-        <button
-          type="button"
-          class="setup-options-toggle"
-          aria-expanded={expanded}
-          onClick={() => {
-            if (expanded) {
-              setCompactValues(
-                (selectedKnown.length ? selectedKnown : orderedOptions.slice(0, 3)).map(
-                  (option) => option.value
-                )
-              );
-            }
-            setExpanded(!expanded);
-          }}
-        >
-          {expanded ? "Show fewer" : `Show ${hiddenCount} more`}
-        </button>
-      ) : null}
       {expanded || custom.length ? (
         <label class="setup-other-tag">
           Other (separate multiple tags with commas)

@@ -390,7 +390,7 @@ test("guides house answers one game at a time and keeps progress locally", async
   await page.getByLabel("Have you learned it?").selectOption("yes");
   await page.getByLabel("Overall house rating").selectOption("4");
   await page.getByLabel("Setup time").selectOption("11-20");
-  await moodGroup.getByRole("button", { name: "Show 8 more" }).click();
+  await moodGroup.getByRole("button", { name: "Show all 9 mood or vibe options" }).click();
   await expect(moodGroup.locator(".setup-checkboxes span")).toHaveText([
     "Casual / relaxed",
     "Chaotic",
@@ -407,10 +407,14 @@ test("guides house answers one game at a time and keeps progress locally", async
   await otherMood.pressSequentially("nostalgic, contemplative");
   await expect(otherMood).toHaveValue("nostalgic, contemplative");
   const accessibilityGroup = page.getByRole("group", { name: "Accessibility considerations" });
-  await accessibilityGroup.getByRole("button", { name: "Show 6 more" }).click();
+  await accessibilityGroup
+    .getByRole("button", { name: "Show all 7 accessibility considerations options" })
+    .click();
   await accessibilityGroup.getByLabel("Small text").check();
   const contentGroup = page.getByRole("group", { name: "Content considerations" });
-  await contentGroup.getByRole("button", { name: "Show 7 more" }).click();
+  await contentGroup
+    .getByRole("button", { name: "Show all 8 content considerations options" })
+    .click();
   await contentGroup.getByLabel("Mature themes").check();
   await expect(page.getByRole("group", { name: "Supported styles" })).toHaveCount(0);
   await page.getByRole("button", { name: "Save & next" }).click();
