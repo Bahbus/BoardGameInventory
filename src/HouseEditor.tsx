@@ -21,6 +21,11 @@ import {
   SETUP_TIME_RANGES,
   type HouseTagOption
 } from "./lib/houseOptions";
+import {
+  applyHowItPlaysSuggestion,
+  parseSetupSuggestions,
+  type HowItPlaysSuggestion
+} from "./lib/setupSuggestions";
 
 const STORAGE_KEY = "board-game-inventory:house-progress:v2";
 
@@ -149,6 +154,7 @@ export function HouseEditor({
 }) {
   const [sourceGames, setSourceGames] = useState<HouseAnswer[]>([]);
   const [sourceSha, setSourceSha] = useState("");
+  const [suggestions, setSuggestions] = useState<Map<string, HowItPlaysSuggestion>>(new Map());
   const [progress, setProgress] = useState<SavedHouseProgress>(readProgress);
   const [index, setIndex] = useState(0);
   const [error, setError] = useState("");
@@ -188,6 +194,18 @@ export function HouseEditor({
         const dataset = parseHouseEditorDataset(value);
         setSourceSha(dataset.sourceSha);
         setSourceGames(dataset.games);
+        void fetch(new URL("setup-suggestions.json", document.baseURI))
+          .then((response) => {
+            if (!response.ok) throw new Error("Setup suggestions are unavailable.");
+            return response.json() as Promise<unknown>;
+          })
+          .then((suggestionValue) => {
+            const payload = parseSetupSuggestions(suggestionValue, dataset.sourceSha);
+            setSuggestions(
+              new Map(payload.suggestions.map((suggestion) => [suggestion.slug, suggestion]))
+            );
+          })
+          .catch(() => setSuggestions(new Map()));
       })
       .catch((cause: Error) => setError(cause.message));
   }, [grant, onVerificationLost, serviceUrl]);
@@ -201,8 +219,16 @@ export function HouseEditor({
     }
   }, [progress]);
 
-  const games = useMemo(() => mergeHouseProgress(sourceGames, progress), [sourceGames, progress]);
+  const suggestedSourceGames = useMemo(
+    () => sourceGames.map((game) => applyHowItPlaysSuggestion(game, suggestions.get(game.slug))),
+    [sourceGames, suggestions]
+  );
+  const games = useMemo(
+    () => mergeHouseProgress(suggestedSourceGames, progress),
+    [suggestedSourceGames, progress]
+  );
   const current = games[index];
+  const currentSuggestion = current ? suggestions.get(current.slug) : undefined;
   const knownSlugs = new Set(sourceGames.map((game) => game.slug));
   const completed = new Set(progress.completedSlugs.filter((slug) => knownSlugs.has(slug)));
   const percent = games.length ? Math.round((completed.size / games.length) * 100) : 0;
@@ -483,6 +509,32 @@ export function HouseEditor({
             <p>These answers improve preference matching. Use everyday words where prompted.</p>
           </div>
           <div class="setup-fields">
+            {currentSuggestion ? (
+              <aside class="setup-inference-note wide">
+                <strong>BGG suggestions are preselected.</strong>
+                <p>
+                  These are cautious inferences from BoardGameGeek category and mechanic labels, not
+                  claims made directly by BGG. Please uncheck anything that does not fit your copy
+                  or group.
+                </p>
+                <details>
+                  <summary>See the BGG signals used</summary>
+                  {currentSuggestion.categories.length ? (
+                    <span>Categories: {currentSuggestion.categories.join(", ")}</span>
+                  ) : null}
+                  {currentSuggestion.mechanics.length ? (
+                    <span>Mechanics: {currentSuggestion.mechanics.join(", ")}</span>
+                  ) : null}
+                  <a
+                    href={`https://boardgamegeek.com/boardgame/${currentSuggestion.bggId}`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Review this game on BGG ↗
+                  </a>
+                </details>
+              </aside>
+            ) : null}
             {current.localValuesRequired === "yes" ? (
               <fieldset class="setup-modes">
                 <legend>Supported styles</legend>

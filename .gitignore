@@ -6,6 +6,7 @@ playwright-report/
 test-results/
 outputs/
 public/catalog.json
+public/setup-suggestions.json
 public/house-intake.json
 lighthouse-report.json
 .env

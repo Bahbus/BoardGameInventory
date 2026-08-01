@@ -1342,6 +1342,37 @@ output {
   margin: 0;
 }
 
+.setup-inference-note {
+  padding: 1rem 1.1rem;
+  border: 1px solid #c9b2ef;
+  border-radius: 0.9rem;
+  background: #f6f0ff;
+  color: #3c2c52;
+}
+
+.setup-inference-note p {
+  margin: 0.35rem 0 0;
+  color: #655477;
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.setup-inference-note details {
+  margin-top: 0.65rem;
+}
+
+.setup-inference-note summary {
+  cursor: pointer;
+  font-weight: 750;
+}
+
+.setup-inference-note details span,
+.setup-inference-note details a {
+  display: block;
+  margin-top: 0.45rem;
+  font-size: 0.8rem;
+}
+
 .setup-tag-field {
   min-width: 0;
   margin: 0;
