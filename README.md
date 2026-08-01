@@ -172,16 +172,21 @@ it eligible for filters and roulette; the build requires removing the matching w
 1. Create the public `Bahbus/BoardGameInventory` repository and push `main`.
 2. Register a noncommercial application at BoardGameGeek and add its token as the Actions
    secret `BGG_API_TOKEN`.
-3. Allow Actions to create pull requests in repository Actions settings. The included workflow
-   never approves or merges them.
-4. Run `bash scripts/configureRepository.sh` while authenticated with GitHub CLI.
-5. Enable Dependabot alerts, secret scanning, push protection, and CodeQL if GitHub does not
-   enable them automatically.
-6. In Pages settings, confirm GitHub Actions is the publishing source.
+3. Install GitHub CLI and `jq`, authenticate to the repository, and review
+   `config/repository-policy.json`.
+4. Explicitly apply the reviewed policy with
+   `npm run repository:configure -- Bahbus/BoardGameInventory`.
+5. Confirm the result without mutation using
+   `npm run repository:audit -- Bahbus/BoardGameInventory`.
 
-The setup script creates inventory labels, selects the Actions Pages source, enables the
-available public-repository security features, sets conservative workflow defaults, and
-protects `main`. Review its requests before running it.
+The policy restricts Actions to SHA-pinned GitHub-owned actions, keeps workflow tokens read-only by
+default, prevents Actions from approving pull requests, requires validation and CodeQL on `main`,
+enforces protection for administrators, and enables the available public-repository security
+features. Trusted workflows request their branch and pull-request permissions explicitly but never
+merge automatically. The configuration command is an intentional mutating maintainer operation;
+the audit uses only read requests and exits nonzero on drift. See
+[Repository policy](docs/REPOSITORY_POLICY.md) for the complete contract, recovery guidance, and
+commands.
 
 ## Public-data rule
 

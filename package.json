@@ -33,6 +33,8 @@
     "inventory:finalize:preview": "node --import tsx scripts/finalizeInventory.ts --preview",
     "inventory:finalize": "node --import tsx scripts/finalizeInventory.ts --write",
     "inventory:match": "node --import tsx scripts/matchInventory.ts",
+    "repository:audit": "bash scripts/auditRepository.sh",
+    "repository:configure": "bash scripts/configureRepository.sh",
     "request:apply": "node --import tsx scripts/applyIssueRequest.ts"
   },
   "dependencies": {
