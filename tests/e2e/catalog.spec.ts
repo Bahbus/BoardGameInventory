@@ -373,6 +373,11 @@ test("guides house answers one game at a time and keeps progress locally", async
   await expect(page.getByText("Verified collaborator:")).toBeVisible();
   await expect(page.getByRole("heading", { name: "First Game" })).toBeVisible();
   await expect(page.getByText("BGG suggestions are preselected.")).toBeVisible();
+  await expect(page.locator(".setup-tag-field legend")).toHaveText([
+    "Mood or vibe",
+    "Content considerations",
+    "Accessibility considerations"
+  ]);
   const moodGroup = page.getByRole("group", { name: "Mood or vibe" });
   await expect(moodGroup.getByRole("checkbox")).toHaveCount(1);
   await expect(moodGroup.getByLabel("Strategic / thinky")).toBeChecked();

@@ -627,20 +627,20 @@ export function HouseEditor({
               onChange={(value) => update("moods", value)}
             />
             <TagCheckboxField
-              key={`accessibility-${current.slug}`}
-              legend="Accessibility considerations"
-              help="Choose traits that could affect whether someone can comfortably play."
-              value={current.accessibilityFlags}
-              options={ACCESSIBILITY_OPTIONS}
-              onChange={(value) => update("accessibilityFlags", value)}
-            />
-            <TagCheckboxField
               key={`content-${current.slug}`}
               legend="Content considerations"
               help="Choose themes people may want to know about before game night."
               value={current.contentFlags}
               options={CONTENT_OPTIONS}
               onChange={(value) => update("contentFlags", value)}
+            />
+            <TagCheckboxField
+              key={`accessibility-${current.slug}`}
+              legend="Accessibility considerations"
+              help="Choose traits that could affect whether someone can comfortably play."
+              value={current.accessibilityFlags}
+              options={ACCESSIBILITY_OPTIONS}
+              onChange={(value) => update("accessibilityFlags", value)}
             />
             <label class="wide">
               Recommendation notes
