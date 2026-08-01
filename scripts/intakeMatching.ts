@@ -18,6 +18,8 @@ export const MATCHING_HEADERS = [
   "parent_slug",
   "proposed_title",
   "edition_or_owned_detail",
+  "quantity",
+  "standalone",
   "source_url",
   "known_bgg_id",
   "match_status",
@@ -46,6 +48,8 @@ export interface MatchingRow {
   parentSlug: string;
   proposedTitle: string;
   editionOrOwnedDetail: string;
+  quantity: number;
+  standalone: boolean;
   sourceUrl: string;
   knownBggId?: number;
   matchStatus: MatchingStatus;
@@ -146,6 +150,8 @@ export function buildMatchingManifest(intake: IntakeRow[]): MatchingRow[] {
       parentSlug: parentSlug ?? "",
       proposedTitle: row.proposedTitle,
       editionOrOwnedDetail: row.editionOrOwnedDetail,
+      quantity: 1,
+      standalone: false,
       sourceUrl: row.sourceUrl,
       knownBggId,
       matchStatus: knownBggId
@@ -182,6 +188,8 @@ export function matchingManifestToCsv(rows: MatchingRow[]): string {
       parent_slug: row.parentSlug,
       proposed_title: row.proposedTitle,
       edition_or_owned_detail: row.editionOrOwnedDetail,
+      quantity: row.quantity,
+      standalone: row.standalone,
       source_url: row.sourceUrl,
       known_bgg_id: row.knownBggId,
       match_status: row.matchStatus,
@@ -198,9 +206,17 @@ export function parseMatchingManifest(source: string): MatchingRow[] {
     throw new Error(`Matching manifest headers must be: ${MATCHING_HEADERS.join(",")}`);
   }
   return csvRecords(source).map((row, index) => {
+    const rowNumber = index + 2;
     const knownBggId = row.known_bgg_id ? Number(row.known_bgg_id) : undefined;
     if (knownBggId !== undefined && (!Number.isInteger(knownBggId) || knownBggId <= 0)) {
-      throw new Error(`Matching row ${index + 2} has an invalid known_bgg_id.`);
+      throw new Error(`Matching row ${rowNumber} has an invalid known_bgg_id.`);
+    }
+    const quantity = Number(row.quantity);
+    if (!Number.isInteger(quantity) || quantity <= 0) {
+      throw new Error(`Matching row ${rowNumber} has an invalid quantity.`);
+    }
+    if (!["true", "false"].includes(row.standalone)) {
+      throw new Error(`Matching row ${rowNumber} has an invalid standalone value.`);
     }
     return {
       slug: row.slug,
@@ -208,6 +224,8 @@ export function parseMatchingManifest(source: string): MatchingRow[] {
       parentSlug: row.parent_slug,
       proposedTitle: row.proposed_title,
       editionOrOwnedDetail: row.edition_or_owned_detail,
+      quantity,
+      standalone: row.standalone === "true",
       sourceUrl: row.source_url,
       knownBggId,
       matchStatus: row.match_status as MatchingStatus,
