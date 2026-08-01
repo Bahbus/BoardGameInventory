@@ -100,16 +100,44 @@ function TagCheckboxField({
   onChange: (value: string) => void;
 }) {
   const selected = selectedTags(value);
-  const knownValues = new Set(options.map((option) => option.value));
+  const orderedOptions = useMemo(
+    () =>
+      [...options].sort((left, right) =>
+        left.label.localeCompare(right.label, "en", { sensitivity: "base" })
+      ),
+    [options]
+  );
+  const knownValues = new Set(orderedOptions.map((option) => option.value));
+  const selectedKnown = orderedOptions.filter((option) => selected.includes(option.value));
+  const selectedKnownValues = selectedKnown.map((option) => option.value);
+  const selectedKnownKey = selectedKnownValues.join(";");
   const custom = selected.filter((tag) => !knownValues.has(tag));
+  const [expanded, setExpanded] = useState(false);
+  const [interacted, setInteracted] = useState(false);
+  const [compactValues, setCompactValues] = useState(() =>
+    selectedKnownValues.length
+      ? selectedKnownValues
+      : orderedOptions.slice(0, 3).map((option) => option.value)
+  );
   const [customInput, setCustomInput] = useState(custom.join(", "));
+  useEffect(() => {
+    if (!interacted && selectedKnownKey) {
+      setCompactValues(selectedKnownKey.split(";"));
+    }
+  }, [interacted, selectedKnownKey]);
+  const visibleOptions = expanded
+    ? orderedOptions
+    : orderedOptions.filter((option) => compactValues.includes(option.value));
+  const hiddenCount = orderedOptions.length - visibleOptions.length;
   const setKnownValue = (tag: string, checked: boolean) => {
+    setInteracted(true);
     const next = checked
       ? [...selected.filter((value) => value !== tag), tag]
       : selected.filter((value) => value !== tag);
     onChange(next.join(";"));
   };
   const setCustomValues = (input: string) => {
+    setInteracted(true);
     setCustomInput(input);
     const known = selected.filter((tag) => knownValues.has(tag));
     onChange([...known, ...selectedTags(input)].join(";"));
@@ -120,7 +148,7 @@ function TagCheckboxField({
       <legend>{legend}</legend>
       <p>{help}</p>
       <div class="setup-checkboxes">
-        {options.map((option) => (
+        {visibleOptions.map((option) => (
           <label key={option.value}>
             <input
               type="checkbox"
@@ -131,14 +159,35 @@ function TagCheckboxField({
           </label>
         ))}
       </div>
-      <label class="setup-other-tag">
-        Other (separate multiple tags with commas)
-        <input
-          value={customInput}
-          onInput={(event) => setCustomValues(event.currentTarget.value)}
-          placeholder="Add another consideration…"
-        />
-      </label>
+      {hiddenCount || expanded ? (
+        <button
+          type="button"
+          class="setup-options-toggle"
+          aria-expanded={expanded}
+          onClick={() => {
+            if (expanded) {
+              setCompactValues(
+                (selectedKnown.length ? selectedKnown : orderedOptions.slice(0, 3)).map(
+                  (option) => option.value
+                )
+              );
+            }
+            setExpanded(!expanded);
+          }}
+        >
+          {expanded ? "Show fewer" : `Show ${hiddenCount} more`}
+        </button>
+      ) : null}
+      {expanded || custom.length ? (
+        <label class="setup-other-tag">
+          Other (separate multiple tags with commas)
+          <input
+            value={customInput}
+            onInput={(event) => setCustomValues(event.currentTarget.value)}
+            placeholder="Add another consideration…"
+          />
+        </label>
+      ) : null}
     </fieldset>
   );
 }
