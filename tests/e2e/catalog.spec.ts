@@ -63,7 +63,7 @@ test("orders related navigation together and hides completed Setup", async ({ pa
     "Library",
     "Roulette",
     "Wish list",
-    "Maintain",
+    "Manage",
     "Setup"
   ]);
 
@@ -96,11 +96,21 @@ test("reveals a weighted roulette result and supports reset", async ({ page }) =
 });
 
 test("prefills an authenticated GitHub maintenance request", async ({ page }) => {
-  await page.getByRole("button", { name: "Maintain" }).click();
-  await page.getByRole("textbox", { name: "BGG ID (optional)", exact: true }).fill("68448");
+  await page.getByRole("button", { name: "Manage" }).click();
   await page.getByLabel("Game name").fill("7 Wonders");
-  await page.getByLabel("Stable slug").fill("7-wonders");
-  await expect(page.getByRole("button", { name: /Continue securely on GitHub/ })).toBeEnabled();
+  await page
+    .getByLabel("BGG link or another product page")
+    .fill("https://boardgamegeek.com/boardgame/68448/7-wonders");
+  await expect(page.getByLabel("Stable slug")).toHaveValue("7-wonders");
+  await expect(page.getByRole("button", { name: /Continue game details on GitHub/ })).toBeEnabled();
+
+  await page.getByRole("radio", { name: "Update" }).check();
+  await page.getByLabel("Game or expansion").selectOption("forest-council");
+  await expect(page.getByRole("button", { name: /Choose changes on GitHub/ })).toBeEnabled();
+
+  await page.getByRole("radio", { name: "Remove" }).check();
+  await page.getByLabel("Game or expansion").selectOption("moonlit-paths");
+  await expect(page.getByRole("button", { name: /Review removal on GitHub/ })).toBeEnabled();
 });
 
 test("keeps unowned games in a searchable wish list and out of roulette", async ({ page }) => {
@@ -228,7 +238,7 @@ test("guides an empty collection toward its first addition", async ({ page }) =>
     page.getByRole("heading", { name: "The shelves are ready for their first game" })
   ).toBeVisible();
   await page.getByRole("button", { name: "Add the first game" }).click();
-  await expect(page.getByRole("heading", { name: "Prepare an inventory request" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Manage the library" })).toBeVisible();
 });
 
 test("falls back cleanly when an external cover cannot load", async ({ page }) => {
@@ -254,10 +264,10 @@ test("falls back cleanly when an external cover cannot load", async ({ page }) =
 });
 
 test("supports keyboard navigation between primary views", async ({ page }) => {
-  const maintain = page.getByRole("button", { name: "Maintain" });
+  const maintain = page.getByRole("button", { name: "Manage" });
   await maintain.focus();
   await page.keyboard.press("Enter");
-  await expect(page.getByRole("heading", { name: "Prepare an inventory request" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Manage the library" })).toBeVisible();
   await expect(maintain).toBeFocused();
 
   const roulette = page.getByRole("button", { name: "Roulette", exact: true });

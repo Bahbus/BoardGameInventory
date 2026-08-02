@@ -9,7 +9,12 @@ import {
   weightedDraw
 } from "./lib/catalog";
 import { DEFAULT_PREFERENCES, parsePreferences, serializePreferences } from "./lib/preferences";
-import { buildIssueUrl, buildWishlistIssueUrl } from "./lib/maintenance";
+import {
+  buildIssueUrl,
+  buildWishlistIssueUrl,
+  parseGameSource,
+  slugifyGameName
+} from "./lib/maintenance";
 import type {
   CatalogGame,
   CatalogPayload,
@@ -584,37 +589,87 @@ function Roulette({
   );
 }
 
-function Maintenance() {
+const operationCopy = {
+  add: {
+    label: "Add",
+    description: "Add a game or expansion",
+    action: "Continue game details on GitHub"
+  },
+  update: {
+    label: "Update",
+    description: "Change shelf, availability, ratings, or details",
+    action: "Choose changes on GitHub"
+  },
+  remove: {
+    label: "Remove",
+    description: "Remove an owned item from the public library",
+    action: "Review removal on GitHub"
+  }
+} as const;
+
+function Maintenance({ games }: { games: CatalogGame[] }) {
   const [operation, setOperation] = useState<"add" | "update" | "remove">("add");
-  const [bggId, setBggId] = useState("");
-  const [sourceUrl, setSourceUrl] = useState("");
+  const [source, setSource] = useState("");
   const [name, setName] = useState("");
-  const [slug, setSlug] = useState("");
-  const [parentId, setParentId] = useState("");
+  const [customSlug, setCustomSlug] = useState("");
+  const [isExpansion, setIsExpansion] = useState(false);
   const [parentSlug, setParentSlug] = useState("");
+  const [selectedSlug, setSelectedSlug] = useState("");
   const [notes, setNotes] = useState("");
+
+  const inventoryItems = useMemo(
+    () =>
+      games
+        .flatMap((game) => [
+          { slug: game.slug, bggId: game.bggId, name: game.name, label: game.name },
+          ...game.expansions.map((expansion) => ({
+            slug: expansion.slug,
+            bggId: expansion.bggId,
+            name: expansion.name,
+            label: `${game.name} › ${expansion.name}`
+          }))
+        ])
+        .sort((left, right) => left.label.localeCompare(right.label)),
+    [games]
+  );
+  const selectedItem = inventoryItems.find((item) => item.slug === selectedSlug);
+  const parent = games.find((game) => game.slug === parentSlug);
+  const parsedSource = parseGameSource(source);
+  const generatedSlug = slugifyGameName(name);
+  const slug = operation === "add" ? customSlug || generatedSlug : (selectedItem?.slug ?? "");
+  const requestName = operation === "add" ? name : (selectedItem?.name ?? "");
+  const bggId = operation === "add" ? parsedSource.bggId : String(selectedItem?.bggId ?? "");
+  const sourceUrl = operation === "add" ? parsedSource.sourceUrl : "";
+  const sourceInvalid = Boolean(source.trim() && !parsedSource.bggId && !parsedSource.sourceUrl);
+  const parentId = operation === "add" && isExpansion ? String(parent?.bggId ?? "") : "";
+  const selectedOperation = operationCopy[operation];
+
+  const changeOperation = (next: "add" | "update" | "remove") => {
+    setOperation(next);
+    setSelectedSlug("");
+  };
 
   const url = useMemo(() => {
     return buildIssueUrl(REPOSITORY_URL, {
       operation,
       bggId,
       sourceUrl,
-      name,
+      name: requestName,
       slug,
       parentId,
-      parentSlug,
-      notes
+      parentSlug: operation === "add" && isExpansion ? parentSlug : "",
+      notes: operation === "add" ? notes : ""
     });
-  }, [operation, bggId, sourceUrl, name, slug, parentId, parentSlug, notes]);
+  }, [operation, bggId, sourceUrl, requestName, slug, parentId, parentSlug, isExpansion, notes]);
 
   return (
     <section class="maintenance-card">
       <div class="maintenance-intro">
-        <span class="eyebrow">GitHub-backed maintenance</span>
-        <h2>Prepare an inventory request</h2>
+        <span class="eyebrow">Library management</span>
+        <h2>Manage the library</h2>
         <p>
-          Fill in what you know here. GitHub will ask for any remaining details, confirm your
-          identity, and preserve the request for review.
+          Choose one task and identify the game here. GitHub will open a review form for the
+          remaining details. Nothing changes until its pull request is reviewed and merged.
         </p>
         <div class="privacy-note">
           <strong>Everything submitted is public.</strong> Use shelf labels, never addresses or
@@ -629,97 +684,143 @@ function Maintenance() {
         }}
       >
         <fieldset class="operation-picker">
-          <legend>What needs changing?</legend>
+          <legend>What would you like to do?</legend>
           {(["add", "update", "remove"] as const).map((value) => (
-            <label class={operation === value ? "is-active" : ""} key={value}>
+            <label
+              class={`${operation === value ? "is-active" : ""} ${value !== "add" && !inventoryItems.length ? "is-disabled" : ""}`}
+              key={value}
+            >
               <input
+                aria-label={operationCopy[value].label}
                 type="radio"
                 name="operation"
                 value={value}
                 checked={operation === value}
-                onChange={() => setOperation(value)}
+                disabled={value !== "add" && !inventoryItems.length}
+                onChange={() => changeOperation(value)}
               />
-              {value}
+              <span>
+                <strong>{operationCopy[value].label}</strong>
+                <small>
+                  {value !== "add" && !inventoryItems.length
+                    ? "Available after the first game is published"
+                    : operationCopy[value].description}
+                </small>
+              </span>
             </label>
           ))}
         </fieldset>
         <div class="form-grid">
-          <label>
-            BGG ID <span class="optional-label">(optional)</span>
-            <input
-              inputMode="numeric"
-              value={bggId}
-              onInput={(event) => setBggId(event.currentTarget.value)}
-              placeholder="Leave blank for a local-only game"
-            />
-          </label>
-          {operation === "add" && (
-            <label>
-              Product source URL
-              <input
-                type="url"
-                value={sourceUrl}
-                onInput={(event) => setSourceUrl(event.currentTarget.value)}
-                placeholder="Required when there is no BGG ID"
-              />
-            </label>
-          )}
-          <label>
-            Game name
-            <input
-              value={name}
-              onInput={(event) => setName(event.currentTarget.value)}
-              placeholder="7 Wonders"
-            />
-          </label>
-          <label>
-            Stable slug
-            <input
-              required
-              value={slug}
-              onInput={(event) => setSlug(event.currentTarget.value)}
-              pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
-              placeholder="7-wonders"
-            />
-          </label>
-          {operation === "add" && (
+          {operation === "add" ? (
             <>
               <label>
-                Parent slug
+                Game name
                 <input
-                  value={parentSlug}
-                  onInput={(event) => setParentSlug(event.currentTarget.value)}
-                  pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
-                  placeholder="Preferred for an expansion"
+                  required
+                  value={name}
+                  onInput={(event) => setName(event.currentTarget.value)}
+                  placeholder="7 Wonders"
                 />
               </label>
               <label>
-                Parent BGG ID <span class="optional-label">(optional)</span>
+                BGG link or another product page <span class="optional-label">(optional)</span>
                 <input
-                  inputMode="numeric"
-                  value={parentId}
-                  onInput={(event) => setParentId(event.currentTarget.value)}
-                  placeholder="Only for an expansion"
+                  value={source}
+                  onInput={(event) => setSource(event.currentTarget.value)}
+                  placeholder="https://boardgamegeek.com/boardgame/…"
+                  aria-invalid={sourceInvalid}
+                  aria-describedby={sourceInvalid ? "game-source-error" : undefined}
+                />
+                {sourceInvalid && (
+                  <small class="field-error" id="game-source-error">
+                    Enter a complete web address or a numeric BGG ID.
+                  </small>
+                )}
+              </label>
+              <label class="check-control wide expansion-control">
+                <input
+                  type="checkbox"
+                  checked={isExpansion}
+                  disabled={!games.length}
+                  onChange={(event) => {
+                    setIsExpansion(event.currentTarget.checked);
+                    if (!event.currentTarget.checked) setParentSlug("");
+                  }}
+                />
+                <span>
+                  <strong>This is an expansion</strong>
+                  <small>
+                    {games.length
+                      ? "Attach it to a base game already in the library."
+                      : "Publish its base game first, then add the expansion."}
+                  </small>
+                </span>
+              </label>
+              {isExpansion && (
+                <label class="wide">
+                  Base game
+                  <select
+                    required
+                    value={parentSlug}
+                    onChange={(event) => setParentSlug(event.currentTarget.value)}
+                  >
+                    <option value="">Choose its base game…</option>
+                    {games.map((game) => (
+                      <option value={game.slug} key={game.slug}>
+                        {game.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+              <label class="wide">
+                Ownership notes <span class="optional-label">(optional)</span>
+                <textarea
+                  rows={3}
+                  value={notes}
+                  onInput={(event) => setNotes(event.currentTarget.value)}
+                  placeholder="Edition, condition, included promos, or other useful context…"
                 />
               </label>
+              <details class="maintenance-technical wide">
+                <summary>Technical details</summary>
+                <label>
+                  Stable slug
+                  <input
+                    required
+                    value={customSlug || generatedSlug}
+                    onInput={(event) => setCustomSlug(event.currentTarget.value)}
+                    pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
+                    placeholder="Generated from the game name"
+                  />
+                </label>
+                <p>Usually leave this generated value unchanged.</p>
+              </details>
             </>
+          ) : (
+            <label>
+              Game or expansion
+              <select
+                required
+                value={selectedSlug}
+                onChange={(event) => setSelectedSlug(event.currentTarget.value)}
+              >
+                <option value="">Choose from the library…</option>
+                {inventoryItems.map((item) => (
+                  <option value={item.slug} key={item.slug}>
+                    {item.label}
+                  </option>
+                ))}
+              </select>
+            </label>
           )}
-          <label class="wide">
-            Request notes
-            <textarea
-              rows={4}
-              value={notes}
-              onInput={(event) => setNotes(event.currentTarget.value)}
-              placeholder="Shelf, condition, house notes, or the exact fields to change…"
-            />
-          </label>
         </div>
-        <button class="primary-button" type="submit">
-          Continue securely on GitHub <span aria-hidden="true">↗</span>
+        <button class="primary-button" type="submit" disabled={sourceInvalid}>
+          {selectedOperation.action} <span aria-hidden="true">↗</span>
         </button>
         <p class="form-help">
-          Maintainer requests can produce a validated pull request. Other visitors can submit
-          suggestions for a maintainer to approve.
+          This opens a prefilled GitHub form; it does not submit the request yet. Maintainer
+          requests can produce a validated pull request, while public requests wait for approval.
         </p>
       </form>
     </section>
@@ -929,7 +1030,7 @@ export function App() {
               ["library", "Library"],
               ["roulette", "Roulette"],
               ["wishlist", "Wish list"],
-              ["maintain", "Maintain"],
+              ["maintain", "Manage"],
               ...(payload?.setupRequired !== false || setupAuthCallback
                 ? ([["setup", "Setup"]] as const)
                 : [])
@@ -951,7 +1052,7 @@ export function App() {
       </header>
 
       <main id="main">
-        {view !== "setup" && (
+        {view !== "setup" && view !== "maintain" && (
           <section class="hero">
             <div class="hero-copy">
               <span class="eyebrow">Your shelves, sorted for tonight</span>
@@ -985,7 +1086,7 @@ export function App() {
 
         {view === "wishlist" && <WishlistPanel games={payload?.wishlist ?? []} />}
 
-        {view === "maintain" && <Maintenance />}
+        {view === "maintain" && <Maintenance games={payload?.games ?? []} />}
 
         {view === "setup" && <SetupAccessGate />}
 
@@ -1051,8 +1152,7 @@ export function App() {
                 <span aria-hidden="true">♟</span>
                 <h3>The shelves are ready for their first game</h3>
                 <p>
-                  Start with the bulk CSV template, or use Maintain to prepare an individual
-                  addition.
+                  Start with the bulk CSV template, or use Manage to prepare an individual addition.
                 </p>
                 <button class="primary-button" onClick={() => setView("maintain")}>
                   Add the first game
