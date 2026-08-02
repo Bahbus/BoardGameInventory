@@ -86,6 +86,38 @@ test("filters the library and preserves shareable settings", async ({ page }) =>
   await expect(page).toHaveURL(/players=6/);
 });
 
+test("uses wide screens for persistent filters and a denser catalog", async ({
+  page
+}, testInfo) => {
+  test.skip(testInfo.project.name !== "wide", "Wide-layout contract");
+  expect(page.viewportSize()).toEqual({ width: 2560, height: 1440 });
+  await expect(page.locator(".discovery-layout")).toHaveCSS("display", "grid");
+
+  const filter = page.getByRole("complementary", {
+    name: "Group requirements and preferences"
+  });
+  const library = page.getByRole("region", { name: /games ready/ });
+  const filterBox = await filter.boundingBox();
+  const libraryBox = await library.boundingBox();
+
+  expect(filterBox).not.toBeNull();
+  expect(libraryBox).not.toBeNull();
+  expect(filterBox!.x).toBeLessThan(libraryBox!.x);
+  await expect(filter).toHaveCSS("position", "sticky");
+
+  const catalogColumns = await page
+    .locator(".game-grid")
+    .evaluate((element) =>
+      globalThis.getComputedStyle(element).gridTemplateColumns.split(" ").filter(Boolean)
+    );
+  expect(catalogColumns).toHaveLength(4);
+
+  await page.getByRole("button", { name: "Roulette" }).click();
+  const rouletteBox = await page.getByRole("region", { name: "Game Night Roulette" }).boundingBox();
+  const rouletteFilterBox = await filter.boundingBox();
+  expect(rouletteFilterBox!.x).toBeLessThan(rouletteBox!.x);
+});
+
 test("reveals a weighted roulette result and supports reset", async ({ page }) => {
   await page.getByRole("button", { name: "Roulette" }).click();
   await page.getByRole("button", { name: "Spin the roulette" }).click();

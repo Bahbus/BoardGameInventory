@@ -480,6 +480,10 @@ output {
   padding-top: 0.5rem;
 }
 
+.discovery-content {
+  min-width: 0;
+}
+
 .library-toolbar {
   margin-bottom: 1rem;
 }
@@ -705,7 +709,7 @@ output {
 
 .primary-button {
   border: 0;
-  color: white;
+  color: var(--ink);
   background: var(--orange);
   box-shadow: 3px 3px 0 #9f3315;
 }
@@ -1621,6 +1625,80 @@ footer p {
   }
   to {
     transform: rotate(1440deg);
+  }
+}
+
+@media (min-width: 1280px) {
+  .site-header,
+  main,
+  footer {
+    max-width: 1640px;
+  }
+
+  .hero {
+    min-height: 250px;
+    padding-block: 2.2rem;
+  }
+
+  .discovery-layout {
+    display: grid;
+    grid-template-columns: minmax(270px, 300px) minmax(0, 1fr);
+    align-items: start;
+    gap: 1.5rem;
+    margin-top: 1.4rem;
+  }
+
+  .discovery-layout .filter-panel {
+    position: sticky;
+    top: 1rem;
+    width: 100%;
+    max-height: calc(100vh - 2rem);
+    overflow-y: auto;
+    margin: 0;
+    padding: 1rem;
+    scrollbar-gutter: stable;
+  }
+
+  .discovery-layout .filter-heading {
+    align-items: flex-start;
+  }
+
+  .discovery-layout .filter-heading h2 {
+    font-size: 1.7rem;
+  }
+
+  .discovery-layout .filter-grid,
+  .discovery-layout .advanced-grid {
+    grid-template-columns: 1fr;
+    gap: 0.65rem;
+  }
+
+  .discovery-layout .library-section {
+    padding-top: 0;
+  }
+
+  .discovery-layout .roulette-card {
+    margin-top: 0;
+  }
+
+  .maintenance-card,
+  .setup-shell {
+    max-width: 1180px;
+    margin-inline: auto;
+  }
+
+  .wishlist-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .wishlist-card {
+    grid-template-columns: 120px minmax(0, 1fr);
+  }
+}
+
+@media (min-width: 1720px) {
+  .discovery-layout-library .game-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
