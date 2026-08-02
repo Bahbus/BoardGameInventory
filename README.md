@@ -144,6 +144,11 @@ Compose configuration, and a thin Netlify Functions adapter. See
 verification, Netlify deployment, provider-neutral deployment contract, and production activation
 steps.
 
+Reviewed Setup-service releases use `npm run service:deploy`. The command deploys only a clean,
+current `main`, runs the repository checks first, and verifies the live `/healthz` and
+`/revision.json` responses afterward so the independently hosted service cannot silently drift
+behind the repository.
+
 Copy `data/inventory.example.csv`, replace the sample rows, then run:
 
 ```sh
