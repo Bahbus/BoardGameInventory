@@ -1000,8 +1000,8 @@ output {
 .maintenance-card {
   display: grid;
   grid-template-columns: 0.8fr 1.2fr;
-  gap: 2.5rem;
-  margin: 2rem 0;
+  gap: 2rem;
+  margin: 1.5rem 0 2rem;
   padding: clamp(1.25rem, 4vw, 2.8rem);
   border: 1px solid var(--line);
   border-radius: 1.7rem;
@@ -1046,14 +1046,35 @@ output {
 
 .operation-picker label {
   display: flex;
-  justify-content: center;
-  gap: 0.35rem;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 0.5rem;
   min-height: 2.65rem;
-  padding: 0.52rem 0.75rem;
+  padding: 0.65rem 0.75rem;
   border: 1px solid var(--line);
   border-radius: 0.65rem;
-  text-transform: capitalize;
   cursor: pointer;
+}
+
+.operation-picker label > span {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.operation-picker label strong {
+  color: var(--ink);
+}
+
+.operation-picker label small {
+  color: #74697d;
+  font-size: 0.68rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.operation-picker label.is-disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .operation-picker label.is-active {
@@ -1082,6 +1103,53 @@ output {
   color: #786e81;
   font-size: 0.82em;
   font-weight: 500;
+}
+
+.expansion-control {
+  align-items: flex-start;
+}
+
+.expansion-control > span {
+  display: grid;
+  gap: 0.12rem;
+}
+
+.expansion-control small {
+  color: #786e81;
+  font-size: 0.72rem;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.maintenance-technical {
+  border-top: 1px solid var(--line);
+  padding-top: 0.65rem;
+}
+
+.maintenance-technical summary {
+  color: var(--purple-dark);
+  font-size: 0.78rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.maintenance-technical label {
+  display: grid;
+  gap: 0.25rem;
+  margin-top: 0.65rem;
+}
+
+.maintenance-technical p {
+  margin: 0.3rem 0 0;
+  color: #786e81;
+  font-size: 0.7rem;
+}
+
+.field-error {
+  display: block;
+  margin-top: 0.25rem;
+  color: #9d2813;
+  font-size: 0.72rem;
 }
 
 .setup-shell {
@@ -1595,6 +1663,10 @@ footer p {
 }
 
 @media (max-width: 700px) {
+  .operation-picker {
+    grid-template-columns: 1fr;
+  }
+
   .site-header {
     grid-template-columns: 1fr auto;
     padding: 0.7rem 1rem;

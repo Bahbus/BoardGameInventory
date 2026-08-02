@@ -1,5 +1,32 @@
 import { describe, expect, it } from "vitest";
-import { buildIssueUrl, buildWishlistIssueUrl } from "../../src/lib/maintenance";
+import {
+  buildIssueUrl,
+  buildWishlistIssueUrl,
+  parseGameSource,
+  slugifyGameName
+} from "../../src/lib/maintenance";
+
+describe("maintenance input helpers", () => {
+  it("generates a stable slug from a readable game name", () => {
+    expect(slugifyGameName("  Éverdell: Duo! ")).toBe("everdell-duo");
+  });
+
+  it("extracts a BGG ID from either a link or a numeric ID", () => {
+    expect(parseGameSource("https://boardgamegeek.com/boardgame/68448/7-wonders")).toEqual({
+      bggId: "68448",
+      sourceUrl: ""
+    });
+    expect(parseGameSource("68448")).toEqual({ bggId: "68448", sourceUrl: "" });
+  });
+
+  it("preserves another product page and rejects incomplete input", () => {
+    expect(parseGameSource("https://publisher.example/local-game")).toEqual({
+      bggId: "",
+      sourceUrl: "https://publisher.example/local-game"
+    });
+    expect(parseGameSource("publisher page")).toEqual({ bggId: "", sourceUrl: "" });
+  });
+});
 
 describe("maintenance request links", () => {
   it("prefills the matching GitHub issue form without empty values", () => {
