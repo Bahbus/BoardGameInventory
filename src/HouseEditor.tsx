@@ -750,13 +750,13 @@ export function HouseEditor({
               {notice}
             </p>
           </article>
-
-          <p class="setup-privacy">
-            These answers are intended for this public inventory, so use shelf labels rather than
-            addresses or private information.
-          </p>
         </div>
       </div>
+
+      <p class="setup-privacy">
+        These answers are intended for this public inventory, so use shelf labels rather than
+        addresses or private information.
+      </p>
     </section>
   );
 }

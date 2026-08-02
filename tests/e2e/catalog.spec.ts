@@ -450,10 +450,18 @@ test("guides house answers one game at a time and keeps progress locally", async
       setupNavigator.getByRole("navigation", { name: "Games to set up" }).getByRole("button")
     ).toHaveText(["First Game", "Local Game"]);
     await expect(page.getByLabel("Jump to a game")).toBeHidden();
+    const accessBox = await page.locator(".setup-access-bar").boundingBox();
+    const setupBox = await page.locator(".setup-shell").boundingBox();
+    expect(accessBox!.width).toBeCloseTo(setupBox!.width, 0);
   } else {
     await expect(setupNavigator).toBeHidden();
     await expect(page.getByLabel("Jump to a game")).toBeVisible();
   }
+  expect(
+    await page
+      .locator(".setup-privacy")
+      .evaluate((element) => element.parentElement?.classList.contains("setup-shell"))
+  ).toBe(true);
   await expect(page.getByText("BGG suggestions are preselected.")).toBeVisible();
   await expect(page.locator(".setup-tag-field legend")).toHaveText([
     "Mood or vibe",
