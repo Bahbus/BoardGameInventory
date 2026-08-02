@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "preact/hooks";
+import { useCallback, useEffect, useMemo, useRef, useState } from "preact/hooks";
 import { SetupAccessGate } from "./SetupAccessGate";
 import {
   createStandalonePlayModes,
@@ -380,7 +380,13 @@ function Cover({ game }: { game: CatalogGame }) {
   );
 }
 
-function GameCard({ entry }: { entry: ScoredGame }) {
+function GameCard({
+  entry,
+  onInspect
+}: {
+  entry: ScoredGame;
+  onInspect: (trigger: HTMLButtonElement) => void;
+}) {
   const { game } = entry;
   const values = effectiveValues(game);
   const overridden = Boolean(game.overrides && Object.keys(game.overrides).length);
@@ -435,6 +441,15 @@ function GameCard({ entry }: { entry: ScoredGame }) {
           </details>
         )}
         <div class="card-links">
+          <button
+            class="card-inspect-button"
+            type="button"
+            data-inspector-trigger={game.slug}
+            aria-haspopup="dialog"
+            onClick={(event) => onInspect(event.currentTarget)}
+          >
+            Details
+          </button>
           {game.metadata.url && (
             <a href={game.metadata.url} target="_blank" rel="noreferrer">
               {game.bggId ? "View on BGG" : "View product source"} <span aria-hidden="true">↗</span>
@@ -457,6 +472,122 @@ function GameCard({ entry }: { entry: ScoredGame }) {
         </div>
       </div>
     </article>
+  );
+}
+
+function GameInspector({ entry, onClose }: { entry: ScoredGame; onClose: () => void }) {
+  const { game } = entry;
+  const values = effectiveValues(game);
+  const closeButton = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    closeButton.current?.focus();
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [game.slug, onClose]);
+
+  return (
+    <div class="game-inspector" role="dialog" aria-labelledby="game-inspector-title">
+      <div class="game-inspector-heading">
+        <span class="eyebrow">Game details</span>
+        <button ref={closeButton} class="inspector-close" type="button" onClick={onClose}>
+          Close <span aria-hidden="true">×</span>
+        </button>
+      </div>
+      <div class="inspector-cover">
+        <Cover game={game} />
+        <span class="match-pill">{Math.round(entry.matchScore * 100)}% match</span>
+      </div>
+      <div class="inspector-body">
+        <h2 id="game-inspector-title">{game.name}</h2>
+        {game.edition && <p class="inspector-edition">{game.edition} edition</p>}
+        <dl class="inspector-stats">
+          <div>
+            <dt>Players</dt>
+            <dd>{formatPlayers(values.minPlayers, values.maxPlayers)}</dd>
+          </div>
+          <div>
+            <dt>Playing time</dt>
+            <dd>{formatMinutes(values.minMinutes, values.maxMinutes)}</dd>
+          </div>
+          <div>
+            <dt>Minimum age</dt>
+            <dd>{values.minAge ? `${values.minAge}+` : "Unknown"}</dd>
+          </div>
+          <div>
+            <dt>Complexity</dt>
+            <dd>{game.metadata.complexity?.toFixed(1) ?? "Unknown"}</dd>
+          </div>
+          <div>
+            <dt>House rating</dt>
+            <dd>{game.house.rating ? `${game.house.rating} / 5` : "Not rated"}</dd>
+          </div>
+          <div>
+            <dt>BGG rating</dt>
+            <dd>{game.metadata.rating?.toFixed(1) ?? "Unknown"}</dd>
+          </div>
+        </dl>
+
+        <div class="inspector-shelf">
+          <strong>{game.availability === "available" ? "Available" : game.availability}</strong>
+          <span>Shelf {game.shelf ?? "unassigned"}</span>
+          <span>{game.learned ? "Learned" : "Not learned yet"}</span>
+        </div>
+
+        {[...effectiveModes(game), ...game.house.moods].length > 0 && (
+          <div class="tag-row">
+            {[...effectiveModes(game), ...game.house.moods].map((tag) => (
+              <span class="tag" key={tag}>
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {game.house.recommendationNotes && (
+          <section class="inspector-note">
+            <h3>House recommendation</h3>
+            <p>{game.house.recommendationNotes}</p>
+          </section>
+        )}
+
+        {game.expansions.length > 0 && (
+          <section class="inspector-note">
+            <h3>Owned expansions</h3>
+            <ul>
+              {game.expansions.map((expansion) => (
+                <li key={expansion.slug}>{expansion.name}</li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        <div class="inspector-links">
+          {game.metadata.url && (
+            <a href={game.metadata.url} target="_blank" rel="noreferrer">
+              {game.bggId ? "View on BGG" : "View product source"} ↗
+            </a>
+          )}
+          <a
+            href={buildIssueUrl(REPOSITORY_URL, {
+              operation: "update",
+              bggId: game.bggId?.toString() ?? "",
+              sourceUrl: game.sourceUrl ?? "",
+              name: game.name,
+              slug: game.slug,
+              parentId: "",
+              parentSlug: "",
+              notes: ""
+            })}
+          >
+            Suggest edit
+          </a>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -967,6 +1098,8 @@ export function App() {
   const [error, setError] = useState("");
   const [view, setView] = useState<View>(() => (setupAuthCallback ? "setup" : "library"));
   const [preferences, setPreferences] = useState<GroupPreferences>(initialPreferences);
+  const [inspectedSlug, setInspectedSlug] = useState("");
+  const inspectorTrigger = useRef<HTMLButtonElement>();
   const [drawn, setDrawnState] = useState<string[]>(() => {
     try {
       return JSON.parse(localStorage.getItem(DRAWN_KEY) ?? "[]");
@@ -1008,6 +1141,17 @@ export function App() {
     () => sortScoredGames(filterAndScore(games, preferences), preferences.sort),
     [games, preferences]
   );
+  const inspectedEntry = scored.find((entry) => entry.game.slug === inspectedSlug);
+  const closeInspector = useCallback(() => {
+    setInspectedSlug("");
+    window.requestAnimationFrame(() => {
+      if (inspectorTrigger.current?.isConnected) inspectorTrigger.current.focus();
+    });
+  }, []);
+
+  useEffect(() => {
+    if (view !== "library" || (inspectedSlug && !inspectedEntry)) setInspectedSlug("");
+  }, [inspectedEntry, inspectedSlug, view]);
   const stale = payload
     ? Date.now() - new Date(payload.refreshedAt).getTime() > 30 * 24 * 60 * 60 * 1000
     : false;
@@ -1079,7 +1223,9 @@ export function App() {
         )}
 
         {(view === "library" || view === "roulette") && (
-          <div class={`discovery-layout discovery-layout-${view}`}>
+          <div
+            class={`discovery-layout discovery-layout-${view}${inspectedEntry ? " has-inspector" : ""}`}
+          >
             <FilterPanel preferences={preferences} onChange={setPreferences} games={games} />
             <div class="discovery-content">
               {view === "roulette" ? (
@@ -1168,13 +1314,31 @@ export function App() {
                   ) : (
                     <div class="game-grid">
                       {scored.map((entry) => (
-                        <GameCard entry={entry} key={entry.game.slug} />
+                        <GameCard
+                          entry={entry}
+                          key={entry.game.slug}
+                          onInspect={(trigger) => {
+                            inspectorTrigger.current = trigger;
+                            setInspectedSlug(entry.game.slug);
+                          }}
+                        />
                       ))}
                     </div>
                   )}
                 </section>
               )}
             </div>
+            {inspectedEntry && (
+              <>
+                <button
+                  class="inspector-backdrop"
+                  type="button"
+                  aria-label="Close game details"
+                  onClick={closeInspector}
+                />
+                <GameInspector entry={inspectedEntry} onClose={closeInspector} />
+              </>
+            )}
           </div>
         )}
 

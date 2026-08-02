@@ -31,6 +31,8 @@ export default [
         fetch: "readonly",
         Response: "readonly",
         TextEncoder: "readonly",
+        HTMLButtonElement: "readonly",
+        KeyboardEvent: "readonly",
         btoa: "readonly",
         navigator: "readonly",
         console: "readonly",
