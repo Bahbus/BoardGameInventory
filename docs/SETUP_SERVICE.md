@@ -143,11 +143,17 @@ App only.
 3. Deploy from a committed checkout:
 
    ```sh
-   npx netlify-cli@27.0.1 deploy --build --prod
+   npm run service:deploy
    ```
 
-4. Confirm that `GET /healthz` returns `{"status":"ok"}` and that the root page identifies the
-   service.
+   The guarded command refuses to deploy unless the worktree is clean, the current branch is
+   `main`, and its commit exactly matches `origin/main`. It runs the complete repository check,
+   deploys through the pinned Netlify CLI, and then verifies both the health response and the
+   deployed commit SHA. Local Netlify authentication and the ignored `.netlify/state.json` link
+   remain required; no Netlify credential is added to the repository or GitHub Actions.
+
+4. Confirm that `GET /healthz` returns `{"status":"ok"}`, `GET /revision.json` identifies the
+   intended full Git commit SHA, and the root page identifies the service.
 
 The committed `netlify.toml` selects Node.js 24, builds the TypeScript service, bundles the
 function, and rewrites only the health, authorization, and Setup API routes. `.netlify/` is local
