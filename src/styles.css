@@ -1855,6 +1855,11 @@ footer p {
     margin-inline: auto;
   }
 
+  .setup-access-bar {
+    max-width: 1500px;
+    margin-inline: auto;
+  }
+
   .setup-progress-compact {
     display: none;
   }
