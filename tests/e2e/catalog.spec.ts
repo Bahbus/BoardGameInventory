@@ -86,6 +86,33 @@ test("filters the library and preserves shareable settings", async ({ page }) =>
   await expect(page).toHaveURL(/players=6/);
 });
 
+test("inspects a game without losing the catalog position", async ({ page }, testInfo) => {
+  const trigger = page
+    .getByRole("article")
+    .filter({ has: page.getByRole("heading", { name: "Forest Council", exact: true }) })
+    .getByRole("button", { name: "Details" });
+  await trigger.click();
+
+  const inspector = page.getByRole("dialog", { name: "Forest Council" });
+  await expect(inspector).toBeVisible();
+  await expect(inspector.getByRole("button", { name: /Close/ })).toBeFocused();
+  await expect(inspector.getByText("2–5 players")).toBeVisible();
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+
+  if (testInfo.project.name === "wide") {
+    const inspectorBox = await inspector.boundingBox();
+    const triggerBox = await trigger.boundingBox();
+    expect(inspectorBox!.x).toBeGreaterThan(triggerBox!.x);
+    await expect(page.getByRole("button", { name: "Close game details" })).toBeHidden();
+  } else {
+    await expect(page.getByRole("button", { name: "Close game details" })).toBeVisible();
+  }
+
+  await page.keyboard.press("Escape");
+  await expect(inspector).toHaveCount(0);
+  await expect(trigger).toBeFocused();
+});
+
 test("uses wide screens for persistent filters and a denser catalog", async ({
   page
 }, testInfo) => {
@@ -414,6 +441,19 @@ test("guides house answers one game at a time and keeps progress locally", async
   await page.getByRole("button", { name: "Setup", exact: true }).click();
   await expect(page.getByText("Verified collaborator:")).toBeVisible();
   await expect(page.getByRole("heading", { name: "First Game" })).toBeVisible();
+  const setupNavigator = page.getByRole("complementary", {
+    name: "Setup progress and game navigation"
+  });
+  if ((page.viewportSize()?.width ?? 0) >= 1280) {
+    await expect(setupNavigator).toBeVisible();
+    await expect(
+      setupNavigator.getByRole("navigation", { name: "Games to set up" }).getByRole("button")
+    ).toHaveText(["First Game", "Local Game"]);
+    await expect(page.getByLabel("Jump to a game")).toBeHidden();
+  } else {
+    await expect(setupNavigator).toBeHidden();
+    await expect(page.getByLabel("Jump to a game")).toBeVisible();
+  }
   await expect(page.getByText("BGG suggestions are preselected.")).toBeVisible();
   await expect(page.locator(".setup-tag-field legend")).toHaveText([
     "Mood or vibe",
@@ -467,7 +507,9 @@ test("guides house answers one game at a time and keeps progress locally", async
   await page.getByRole("button", { name: "Save & next" }).click();
 
   await expect(page.getByRole("heading", { name: "Local Game" })).toBeVisible();
-  await expect(page.getByText("1 of 2", { exact: true })).toBeVisible();
+  await expect(
+    page.locator(".setup-progress:visible").getByText("1 of 2", { exact: true })
+  ).toBeVisible();
   await expect(page.getByRole("group", { name: "Mood or vibe" }).getByRole("checkbox")).toHaveCount(
     3
   );
@@ -480,7 +522,9 @@ test("guides house answers one game at a time and keeps progress locally", async
   await page.getByLabel("Competitive").check();
   await page.getByLabel("Solo").check();
   await page.getByRole("button", { name: "Save game" }).click();
-  await expect(page.getByText("2 of 2", { exact: true })).toBeVisible();
+  await expect(
+    page.locator(".setup-progress:visible").getByText("2 of 2", { exact: true })
+  ).toBeVisible();
   await expect(page.getByText("Every game has a completed answer.")).toBeVisible();
   await page.getByRole("button", { name: "Save to GitHub" }).click();
   await expect(page.getByRole("link", { name: "Open pull request #42 on GitHub" })).toHaveAttribute(
@@ -495,7 +539,9 @@ test("guides house answers one game at a time and keeps progress locally", async
 
   await page.reload();
   await page.getByRole("button", { name: "Setup", exact: true }).click();
-  await expect(page.getByText("2 of 2", { exact: true })).toBeVisible();
+  await expect(
+    page.locator(".setup-progress:visible").getByText("2 of 2", { exact: true })
+  ).toBeVisible();
 });
 
 test("keeps the guided setup screen free of detectable accessibility violations", async ({

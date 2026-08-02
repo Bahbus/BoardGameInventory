@@ -292,6 +292,11 @@ export function HouseEditor({
   const knownSlugs = new Set(sourceGames.map((game) => game.slug));
   const completed = new Set(progress.completedSlugs.filter((slug) => knownSlugs.has(slug)));
   const percent = games.length ? Math.round((completed.size / games.length) * 100) : 0;
+  const gameNavigation = games
+    .map((game, gameIndex) => ({ game, gameIndex }))
+    .sort((left, right) =>
+      left.game.title.localeCompare(right.game.title, "en", { sensitivity: "base" })
+    );
 
   const update = <K extends keyof HouseAnswer>(key: K, value: HouseAnswer[K]) => {
     if (!current) return;
@@ -387,7 +392,7 @@ export function HouseEditor({
             Answer what you know, one game at a time. Progress stays on this device while you work.
           </p>
         </div>
-        <div class="setup-progress">
+        <div class="setup-progress setup-progress-compact">
           <strong>
             {completed.size} of {games.length}
           </strong>
@@ -398,319 +403,360 @@ export function HouseEditor({
         </div>
       </div>
 
-      <div class="setup-toolbar">
-        <label>
-          Jump to a game
-          <select value={index} onChange={(event) => setIndex(Number(event.currentTarget.value))}>
-            {games.map((game, gameIndex) => (
-              <option value={gameIndex} key={game.slug}>
-                {completed.has(game.slug) ? "✓ " : ""}
-                {game.title}
-              </option>
-            ))}
-          </select>
-        </label>
-        <div class="setup-downloads">
-          <span class={progressSaved ? "setup-autosave" : "setup-autosave setup-autosave-error"}>
-            {progressSaved
-              ? "Progress saves automatically in this browser."
-              : "This browser could not save progress automatically."}
-          </span>
-          <button
-            class="secondary-button dark"
-            onClick={() =>
-              download(
-                "inventory-house-answers.csv",
-                `${houseAnswersToCsv(games)}\n`,
-                "text/csv;charset=utf-8"
-              )
-            }
-          >
-            Download CSV copy
-          </button>
-        </div>
-      </div>
-
-      {completed.size === games.length && (
-        <div class="setup-complete" role="status">
-          {submission ? (
-            <>
-              <strong>Setup answers are ready for review.</strong>
-              <a href={submission.pullRequestUrl} target="_blank" rel="noreferrer">
-                Open pull request #{submission.pullRequestNumber} on GitHub
-              </a>
-            </>
-          ) : (
-            <>
-              <strong>Every game has a completed answer.</strong>
-              <span>Save them to a new GitHub branch and pull request for review.</span>
-              <button class="primary-button" disabled={submitting} onClick={() => void submit()}>
-                {submitting ? "Saving to GitHub…" : "Save to GitHub"}
+      <div class="setup-workspace">
+        <aside class="setup-navigator" aria-label="Setup progress and game navigation">
+          <div class="setup-progress setup-progress-wide">
+            <strong>
+              {completed.size} of {games.length}
+            </strong>
+            <span>{percent}% complete</span>
+            <progress max={games.length} value={completed.size}>
+              {percent}%
+            </progress>
+          </div>
+          <div class="setup-game-list" role="navigation" aria-label="Games to set up">
+            {gameNavigation.map(({ game, gameIndex }) => (
+              <button
+                type="button"
+                class={gameIndex === index ? "is-current" : ""}
+                aria-current={gameIndex === index ? "step" : undefined}
+                onClick={() => setIndex(gameIndex)}
+                key={game.slug}
+              >
+                <span>{game.title}</span>
+                {completed.has(game.slug) && <span aria-label="Complete">✓</span>}
               </button>
-            </>
-          )}
-        </div>
-      )}
+            ))}
+          </div>
+        </aside>
 
-      <article class="setup-card">
-        <header>
-          <div>
-            <span class="eyebrow">
-              Game {index + 1} of {games.length}
-            </span>
-            <h2>{current.title}</h2>
-          </div>
-          {completed.has(current.slug) && <span class="complete-badge">Complete</span>}
-        </header>
-
-        <div class="setup-section">
-          <div>
-            <h3>The basics</h3>
-            <p>These help us know whether the game can be offered tonight.</p>
-          </div>
-          <div class="setup-fields">
+        <div class="setup-workspace-main">
+          <div class="setup-toolbar">
             <label>
-              Is it available?
+              Jump to a game
               <select
-                value={current.availability}
-                onChange={(event) => update("availability", event.currentTarget.value)}
+                value={index}
+                onChange={(event) => setIndex(Number(event.currentTarget.value))}
               >
-                <option value="available">Available</option>
-                <option value="loaned">Loaned out</option>
-                <option value="incomplete">Incomplete</option>
-                <option value="unavailable">Otherwise unavailable</option>
-              </select>
-            </label>
-            <label>
-              Have you learned it?
-              <select
-                value={current.learned}
-                onChange={(event) => update("learned", event.currentTarget.value)}
-              >
-                <option value="">Choose one</option>
-                <option value="yes">Yes</option>
-                <option value="no">Not yet</option>
-              </select>
-            </label>
-            <label>
-              Shelf label
-              <input
-                value={current.shelf}
-                onInput={(event) => update("shelf", event.currentTarget.value)}
-                placeholder="For example: Basement A3"
-              />
-            </label>
-          </div>
-        </div>
-
-        <div class="setup-section">
-          <div>
-            <h3>Your experience</h3>
-            <p>It is fine to leave ratings blank until the group has played it.</p>
-          </div>
-          <div class="setup-fields rating-grid">
-            <RatingField
-              label="Overall house rating"
-              value={current.houseRating}
-              onChange={(value) => update("houseRating", value)}
-            />
-            <label>
-              Setup time
-              <select
-                value={current.setupTimeRange}
-                onChange={(event) => update("setupTimeRange", event.currentTarget.value)}
-              >
-                <option value="">Not sure yet</option>
-                {SETUP_TIME_RANGES.map((option) => (
-                  <option value={option.value} key={option.value}>
-                    {option.label}
+                {games.map((game, gameIndex) => (
+                  <option value={gameIndex} key={game.slug}>
+                    {completed.has(game.slug) ? "✓ " : ""}
+                    {game.title}
                   </option>
                 ))}
               </select>
             </label>
-            <RatingField
-              label="Teaching difficulty"
-              value={current.teachDifficulty}
-              onChange={(value) => update("teachDifficulty", value)}
-            />
-            <label>
-              Table space
-              <select
-                value={current.tableSpace}
-                onChange={(event) => update("tableSpace", event.currentTarget.value)}
+            <div class="setup-downloads">
+              <span
+                class={progressSaved ? "setup-autosave" : "setup-autosave setup-autosave-error"}
               >
-                <option value="">Not sure yet</option>
-                <option value="compact">Compact — small table</option>
-                <option value="standard">Standard — dining table</option>
-                <option value="large">Large — needs extra room</option>
-              </select>
-            </label>
-            <RatingField
-              label="Player interaction"
-              value={current.interaction}
-              onChange={(value) => update("interaction", value)}
-            />
-            <RatingField
-              label="Influence of luck"
-              value={current.luck}
-              onChange={(value) => update("luck", value)}
-            />
-            <RatingField
-              label="Downtime between turns"
-              value={current.downtime}
-              onChange={(value) => update("downtime", value)}
-            />
-          </div>
-        </div>
-
-        <div class="setup-section">
-          <div>
-            <h3>How it plays</h3>
-            <p>These answers improve preference matching. Use everyday words where prompted.</p>
-          </div>
-          <div class="setup-fields">
-            {currentSuggestion ? (
-              <aside class="setup-inference-note wide">
-                <strong>BGG suggestions are preselected.</strong>
-                <p>
-                  These are cautious inferences from BoardGameGeek category and mechanic labels, not
-                  claims made directly by BGG. Please uncheck anything that does not fit your copy
-                  or group.
-                </p>
-                <details>
-                  <summary>See the BGG signals used</summary>
-                  {currentSuggestion.categories.length ? (
-                    <span>Categories: {currentSuggestion.categories.join(", ")}</span>
-                  ) : null}
-                  {currentSuggestion.mechanics.length ? (
-                    <span>Mechanics: {currentSuggestion.mechanics.join(", ")}</span>
-                  ) : null}
-                  <a
-                    href={`https://boardgamegeek.com/boardgame/${currentSuggestion.bggId}`}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    Review this game on BGG ↗
-                  </a>
-                </details>
-              </aside>
-            ) : null}
-            {current.localValuesRequired === "yes" ? (
-              <fieldset class="setup-modes">
-                <legend>Supported styles</legend>
-                <p class="setup-mode-help">
-                  This game has no BGG record, so select every style it supports.
-                </p>
-                {[
-                  ["competitive", "Competitive"],
-                  ["cooperative", "Cooperative"],
-                  ["team", "Teams"],
-                  ["solo", "Solo"]
-                ].map(([value, label]) => (
-                  <label key={value}>
-                    <input
-                      type="checkbox"
-                      checked={selectedTags(current.modes).includes(value)}
-                      onChange={() => toggleMode(value)}
-                    />
-                    {label}
-                  </label>
-                ))}
-              </fieldset>
-            ) : null}
-            <TagCheckboxField
-              key={`moods-${current.slug}`}
-              legend="Mood or vibe"
-              help="Choose every description that feels like a good fit."
-              value={current.moods}
-              options={MOOD_OPTIONS}
-              onChange={(value) => update("moods", value)}
-            />
-            <TagCheckboxField
-              key={`content-${current.slug}`}
-              legend="Content considerations"
-              help="Choose themes people may want to know about before game night."
-              value={current.contentFlags}
-              options={CONTENT_OPTIONS}
-              onChange={(value) => update("contentFlags", value)}
-            />
-            <TagCheckboxField
-              key={`accessibility-${current.slug}`}
-              legend="Accessibility considerations"
-              help="Choose traits that could affect whether someone can comfortably play."
-              value={current.accessibilityFlags}
-              options={ACCESSIBILITY_OPTIONS}
-              onChange={(value) => update("accessibilityFlags", value)}
-            />
-            <label class="wide">
-              Recommendation notes
-              <textarea
-                rows={3}
-                value={current.recommendationNotes}
-                onInput={(event) => update("recommendationNotes", event.currentTarget.value)}
-                placeholder="Who tends to enjoy this game, or when does it work especially well?"
-              />
-            </label>
-          </div>
-        </div>
-
-        {current.localValuesRequired === "yes" && (
-          <div class="setup-section local-values">
-            <div>
-              <h3>Basic game details</h3>
-              <p>This game is not on BGG, so these five answers are needed for filtering.</p>
+                {progressSaved
+                  ? "Progress saves automatically in this browser."
+                  : "This browser could not save progress automatically."}
+              </span>
+              <button
+                class="secondary-button dark"
+                onClick={() =>
+                  download(
+                    "inventory-house-answers.csv",
+                    `${houseAnswersToCsv(games)}\n`,
+                    "text/csv;charset=utf-8"
+                  )
+                }
+              >
+                Download CSV copy
+              </button>
             </div>
-            <div class="setup-fields local-grid">
-              {[
-                ["localMinPlayers", "Minimum players"],
-                ["localMaxPlayers", "Maximum players"],
-                ["localMinMinutes", "Minimum minutes"],
-                ["localMaxMinutes", "Maximum minutes"],
-                ["localMinAge", "Minimum age"]
-              ].map(([key, label]) => (
-                <label key={key}>
-                  {label}
+          </div>
+
+          {completed.size === games.length && (
+            <div class="setup-complete" role="status">
+              {submission ? (
+                <>
+                  <strong>Setup answers are ready for review.</strong>
+                  <a href={submission.pullRequestUrl} target="_blank" rel="noreferrer">
+                    Open pull request #{submission.pullRequestNumber} on GitHub
+                  </a>
+                </>
+              ) : (
+                <>
+                  <strong>Every game has a completed answer.</strong>
+                  <span>Save them to a new GitHub branch and pull request for review.</span>
+                  <button
+                    class="primary-button"
+                    disabled={submitting}
+                    onClick={() => void submit()}
+                  >
+                    {submitting ? "Saving to GitHub…" : "Save to GitHub"}
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+
+          <article class="setup-card">
+            <header>
+              <div>
+                <span class="eyebrow">
+                  Game {index + 1} of {games.length}
+                </span>
+                <h2>{current.title}</h2>
+              </div>
+              {completed.has(current.slug) && <span class="complete-badge">Complete</span>}
+            </header>
+
+            <div class="setup-section">
+              <div>
+                <h3>The basics</h3>
+                <p>These help us know whether the game can be offered tonight.</p>
+              </div>
+              <div class="setup-fields">
+                <label>
+                  Is it available?
+                  <select
+                    value={current.availability}
+                    onChange={(event) => update("availability", event.currentTarget.value)}
+                  >
+                    <option value="available">Available</option>
+                    <option value="loaned">Loaned out</option>
+                    <option value="incomplete">Incomplete</option>
+                    <option value="unavailable">Otherwise unavailable</option>
+                  </select>
+                </label>
+                <label>
+                  Have you learned it?
+                  <select
+                    value={current.learned}
+                    onChange={(event) => update("learned", event.currentTarget.value)}
+                  >
+                    <option value="">Choose one</option>
+                    <option value="yes">Yes</option>
+                    <option value="no">Not yet</option>
+                  </select>
+                </label>
+                <label>
+                  Shelf label
                   <input
-                    type="number"
-                    min="0"
-                    inputMode="numeric"
-                    value={current[key as keyof HouseAnswer]}
-                    onInput={(event) => update(key as keyof HouseAnswer, event.currentTarget.value)}
+                    value={current.shelf}
+                    onInput={(event) => update("shelf", event.currentTarget.value)}
+                    placeholder="For example: Basement A3"
                   />
                 </label>
-              ))}
+              </div>
             </div>
-          </div>
-        )}
 
-        <div class="setup-actions">
-          <button
-            class="secondary-button dark"
-            disabled={index === 0}
-            onClick={() => setIndex(Math.max(0, index - 1))}
-          >
-            Previous
-          </button>
-          <button
-            class="text-button"
-            disabled={index === games.length - 1}
-            onClick={() => setIndex(Math.min(games.length - 1, index + 1))}
-          >
-            Skip for now
-          </button>
-          <button class="primary-button" onClick={finishCurrent}>
-            {index === games.length - 1 ? "Save game" : "Save & next"}
-          </button>
+            <div class="setup-section">
+              <div>
+                <h3>Your experience</h3>
+                <p>It is fine to leave ratings blank until the group has played it.</p>
+              </div>
+              <div class="setup-fields rating-grid">
+                <RatingField
+                  label="Overall house rating"
+                  value={current.houseRating}
+                  onChange={(value) => update("houseRating", value)}
+                />
+                <label>
+                  Setup time
+                  <select
+                    value={current.setupTimeRange}
+                    onChange={(event) => update("setupTimeRange", event.currentTarget.value)}
+                  >
+                    <option value="">Not sure yet</option>
+                    {SETUP_TIME_RANGES.map((option) => (
+                      <option value={option.value} key={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <RatingField
+                  label="Teaching difficulty"
+                  value={current.teachDifficulty}
+                  onChange={(value) => update("teachDifficulty", value)}
+                />
+                <label>
+                  Table space
+                  <select
+                    value={current.tableSpace}
+                    onChange={(event) => update("tableSpace", event.currentTarget.value)}
+                  >
+                    <option value="">Not sure yet</option>
+                    <option value="compact">Compact — small table</option>
+                    <option value="standard">Standard — dining table</option>
+                    <option value="large">Large — needs extra room</option>
+                  </select>
+                </label>
+                <RatingField
+                  label="Player interaction"
+                  value={current.interaction}
+                  onChange={(value) => update("interaction", value)}
+                />
+                <RatingField
+                  label="Influence of luck"
+                  value={current.luck}
+                  onChange={(value) => update("luck", value)}
+                />
+                <RatingField
+                  label="Downtime between turns"
+                  value={current.downtime}
+                  onChange={(value) => update("downtime", value)}
+                />
+              </div>
+            </div>
+
+            <div class="setup-section">
+              <div>
+                <h3>How it plays</h3>
+                <p>These answers improve preference matching. Use everyday words where prompted.</p>
+              </div>
+              <div class="setup-fields">
+                {currentSuggestion ? (
+                  <aside class="setup-inference-note wide">
+                    <strong>BGG suggestions are preselected.</strong>
+                    <p>
+                      These are cautious inferences from BoardGameGeek category and mechanic labels,
+                      not claims made directly by BGG. Please uncheck anything that does not fit
+                      your copy or group.
+                    </p>
+                    <details>
+                      <summary>See the BGG signals used</summary>
+                      {currentSuggestion.categories.length ? (
+                        <span>Categories: {currentSuggestion.categories.join(", ")}</span>
+                      ) : null}
+                      {currentSuggestion.mechanics.length ? (
+                        <span>Mechanics: {currentSuggestion.mechanics.join(", ")}</span>
+                      ) : null}
+                      <a
+                        href={`https://boardgamegeek.com/boardgame/${currentSuggestion.bggId}`}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        Review this game on BGG ↗
+                      </a>
+                    </details>
+                  </aside>
+                ) : null}
+                {current.localValuesRequired === "yes" ? (
+                  <fieldset class="setup-modes">
+                    <legend>Supported styles</legend>
+                    <p class="setup-mode-help">
+                      This game has no BGG record, so select every style it supports.
+                    </p>
+                    {[
+                      ["competitive", "Competitive"],
+                      ["cooperative", "Cooperative"],
+                      ["team", "Teams"],
+                      ["solo", "Solo"]
+                    ].map(([value, label]) => (
+                      <label key={value}>
+                        <input
+                          type="checkbox"
+                          checked={selectedTags(current.modes).includes(value)}
+                          onChange={() => toggleMode(value)}
+                        />
+                        {label}
+                      </label>
+                    ))}
+                  </fieldset>
+                ) : null}
+                <TagCheckboxField
+                  key={`moods-${current.slug}`}
+                  legend="Mood or vibe"
+                  help="Choose every description that feels like a good fit."
+                  value={current.moods}
+                  options={MOOD_OPTIONS}
+                  onChange={(value) => update("moods", value)}
+                />
+                <TagCheckboxField
+                  key={`content-${current.slug}`}
+                  legend="Content considerations"
+                  help="Choose themes people may want to know about before game night."
+                  value={current.contentFlags}
+                  options={CONTENT_OPTIONS}
+                  onChange={(value) => update("contentFlags", value)}
+                />
+                <TagCheckboxField
+                  key={`accessibility-${current.slug}`}
+                  legend="Accessibility considerations"
+                  help="Choose traits that could affect whether someone can comfortably play."
+                  value={current.accessibilityFlags}
+                  options={ACCESSIBILITY_OPTIONS}
+                  onChange={(value) => update("accessibilityFlags", value)}
+                />
+                <label class="wide">
+                  Recommendation notes
+                  <textarea
+                    rows={3}
+                    value={current.recommendationNotes}
+                    onInput={(event) => update("recommendationNotes", event.currentTarget.value)}
+                    placeholder="Who tends to enjoy this game, or when does it work especially well?"
+                  />
+                </label>
+              </div>
+            </div>
+
+            {current.localValuesRequired === "yes" && (
+              <div class="setup-section local-values">
+                <div>
+                  <h3>Basic game details</h3>
+                  <p>This game is not on BGG, so these five answers are needed for filtering.</p>
+                </div>
+                <div class="setup-fields local-grid">
+                  {[
+                    ["localMinPlayers", "Minimum players"],
+                    ["localMaxPlayers", "Maximum players"],
+                    ["localMinMinutes", "Minimum minutes"],
+                    ["localMaxMinutes", "Maximum minutes"],
+                    ["localMinAge", "Minimum age"]
+                  ].map(([key, label]) => (
+                    <label key={key}>
+                      {label}
+                      <input
+                        type="number"
+                        min="0"
+                        inputMode="numeric"
+                        value={current[key as keyof HouseAnswer]}
+                        onInput={(event) =>
+                          update(key as keyof HouseAnswer, event.currentTarget.value)
+                        }
+                      />
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div class="setup-actions">
+              <button
+                class="secondary-button dark"
+                disabled={index === 0}
+                onClick={() => setIndex(Math.max(0, index - 1))}
+              >
+                Previous
+              </button>
+              <button
+                class="text-button"
+                disabled={index === games.length - 1}
+                onClick={() => setIndex(Math.min(games.length - 1, index + 1))}
+              >
+                Skip for now
+              </button>
+              <button class="primary-button" onClick={finishCurrent}>
+                {index === games.length - 1 ? "Save game" : "Save & next"}
+              </button>
+            </div>
+            <p class="setup-notice" aria-live="polite">
+              {notice}
+            </p>
+          </article>
+
+          <p class="setup-privacy">
+            These answers are intended for this public inventory, so use shelf labels rather than
+            addresses or private information.
+          </p>
         </div>
-        <p class="setup-notice" aria-live="polite">
-          {notice}
-        </p>
-      </article>
-
-      <p class="setup-privacy">
-        These answers are intended for this public inventory, so use shelf labels rather than
-        addresses or private information.
-      </p>
+      </div>
     </section>
   );
 }
