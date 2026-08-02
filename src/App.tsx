@@ -1079,106 +1079,110 @@ export function App() {
         )}
 
         {(view === "library" || view === "roulette") && (
-          <FilterPanel preferences={preferences} onChange={setPreferences} games={games} />
-        )}
+          <div class={`discovery-layout discovery-layout-${view}`}>
+            <FilterPanel preferences={preferences} onChange={setPreferences} games={games} />
+            <div class="discovery-content">
+              {view === "roulette" ? (
+                <Roulette games={scored} drawn={drawn} setDrawn={setDrawn} />
+              ) : (
+                <section class="library-section" aria-labelledby="library-title">
+                  <div class="library-toolbar">
+                    <div>
+                      <span class="eyebrow">The shortlist</span>
+                      <h2 id="library-title">
+                        {payload
+                          ? `${scored.length} game${scored.length === 1 ? "" : "s"} ready`
+                          : "Loading the shelves…"}
+                      </h2>
+                    </div>
+                    <div class="toolbar-actions">
+                      <label class="search-field">
+                        <span class="sr-only">Search library</span>
+                        <input
+                          type="search"
+                          value={preferences.query}
+                          onInput={(event) =>
+                            setPreferences({ ...preferences, query: event.currentTarget.value })
+                          }
+                          placeholder="Search games, mechanics…"
+                        />
+                      </label>
+                      <label>
+                        <span class="sr-only">Sort games</span>
+                        <select
+                          value={preferences.sort}
+                          onChange={(event) =>
+                            setPreferences({
+                              ...preferences,
+                              sort: event.currentTarget.value as SortKey
+                            })
+                          }
+                        >
+                          <option value="name">Sort: Name</option>
+                          <option value="houseRating">House rating</option>
+                          <option value="bggRating">BGG rating</option>
+                          <option value="complexity">Complexity</option>
+                          <option value="duration">Duration</option>
+                          <option value="players">Player count</option>
+                        </select>
+                      </label>
+                      <button
+                        class="share-button"
+                        onClick={() => navigator.clipboard?.writeText(window.location.href)}
+                      >
+                        Copy link
+                      </button>
+                    </div>
+                  </div>
 
-        {view === "roulette" && <Roulette games={scored} drawn={drawn} setDrawn={setDrawn} />}
+                  {error ? (
+                    <div class="empty-state">
+                      <span aria-hidden="true">!</span>
+                      <h3>We couldn’t open the library</h3>
+                      <p>{error}</p>
+                    </div>
+                  ) : payload && !payload.games.length ? (
+                    <div class="empty-state">
+                      <span aria-hidden="true">♟</span>
+                      <h3>The shelves are ready for their first game</h3>
+                      <p>
+                        Start with the bulk CSV template, or use Manage to prepare an individual
+                        addition.
+                      </p>
+                      <button class="primary-button" onClick={() => setView("maintain")}>
+                        Add the first game
+                      </button>
+                    </div>
+                  ) : payload && !scored.length ? (
+                    <div class="empty-state">
+                      <span aria-hidden="true">◇</span>
+                      <h3>No game meets every requirement</h3>
+                      <p>Try a longer time limit, another mode, or a different table size.</p>
+                      <button
+                        class="secondary-button dark"
+                        onClick={() => setPreferences({ ...DEFAULT_PREFERENCES })}
+                      >
+                        Clear requirements
+                      </button>
+                    </div>
+                  ) : (
+                    <div class="game-grid">
+                      {scored.map((entry) => (
+                        <GameCard entry={entry} key={entry.game.slug} />
+                      ))}
+                    </div>
+                  )}
+                </section>
+              )}
+            </div>
+          </div>
+        )}
 
         {view === "wishlist" && <WishlistPanel games={payload?.wishlist ?? []} />}
 
         {view === "maintain" && <Maintenance games={payload?.games ?? []} />}
 
         {view === "setup" && <SetupAccessGate />}
-
-        {view === "library" && (
-          <section class="library-section" aria-labelledby="library-title">
-            <div class="library-toolbar">
-              <div>
-                <span class="eyebrow">The shortlist</span>
-                <h2 id="library-title">
-                  {payload
-                    ? `${scored.length} game${scored.length === 1 ? "" : "s"} ready`
-                    : "Loading the shelves…"}
-                </h2>
-              </div>
-              <div class="toolbar-actions">
-                <label class="search-field">
-                  <span class="sr-only">Search library</span>
-                  <input
-                    type="search"
-                    value={preferences.query}
-                    onInput={(event) =>
-                      setPreferences({ ...preferences, query: event.currentTarget.value })
-                    }
-                    placeholder="Search games, mechanics…"
-                  />
-                </label>
-                <label>
-                  <span class="sr-only">Sort games</span>
-                  <select
-                    value={preferences.sort}
-                    onChange={(event) =>
-                      setPreferences({
-                        ...preferences,
-                        sort: event.currentTarget.value as SortKey
-                      })
-                    }
-                  >
-                    <option value="name">Sort: Name</option>
-                    <option value="houseRating">House rating</option>
-                    <option value="bggRating">BGG rating</option>
-                    <option value="complexity">Complexity</option>
-                    <option value="duration">Duration</option>
-                    <option value="players">Player count</option>
-                  </select>
-                </label>
-                <button
-                  class="share-button"
-                  onClick={() => navigator.clipboard?.writeText(window.location.href)}
-                >
-                  Copy link
-                </button>
-              </div>
-            </div>
-
-            {error ? (
-              <div class="empty-state">
-                <span aria-hidden="true">!</span>
-                <h3>We couldn’t open the library</h3>
-                <p>{error}</p>
-              </div>
-            ) : payload && !payload.games.length ? (
-              <div class="empty-state">
-                <span aria-hidden="true">♟</span>
-                <h3>The shelves are ready for their first game</h3>
-                <p>
-                  Start with the bulk CSV template, or use Manage to prepare an individual addition.
-                </p>
-                <button class="primary-button" onClick={() => setView("maintain")}>
-                  Add the first game
-                </button>
-              </div>
-            ) : payload && !scored.length ? (
-              <div class="empty-state">
-                <span aria-hidden="true">◇</span>
-                <h3>No game meets every requirement</h3>
-                <p>Try a longer time limit, another mode, or a different table size.</p>
-                <button
-                  class="secondary-button dark"
-                  onClick={() => setPreferences({ ...DEFAULT_PREFERENCES })}
-                >
-                  Clear requirements
-                </button>
-              </div>
-            ) : (
-              <div class="game-grid">
-                {scored.map((entry) => (
-                  <GameCard entry={entry} key={entry.game.slug} />
-                ))}
-              </div>
-            )}
-          </section>
-        )}
       </main>
 
       <footer>
