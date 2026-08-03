@@ -1208,7 +1208,6 @@ function WishlistPanel({ games }: { games: CatalogWishlistGame[] }) {
                 ) : null}
                 <div class="cover-fallback" hidden={Boolean(game.metadata.thumbnail)}>
                   <span aria-hidden="true">◇</span>
-                  <strong>{game.name}</strong>
                 </div>
               </div>
               <div class="wishlist-card-copy">
