@@ -1893,7 +1893,7 @@ footer p {
   .setup-workspace {
     display: grid;
     grid-template-columns: minmax(230px, 270px) minmax(0, 1fr);
-    align-items: stretch;
+    align-items: start;
     gap: 1.4rem;
   }
 
@@ -1903,7 +1903,7 @@ footer p {
     align-self: start;
     display: flex;
     flex-direction: column;
-    max-height: 100%;
+    max-height: var(--setup-questionnaire-height, none);
     overflow: hidden;
     border: 1px solid var(--line);
     border-radius: 1rem;
