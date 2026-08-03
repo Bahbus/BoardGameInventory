@@ -454,6 +454,9 @@ export function HouseEditor({
 
         <div class="setup-workspace-main" ref={setupMainRef}>
           <div class="setup-toolbar">
+            <p class="setup-toolbar-guidance" aria-hidden="true">
+              Answer what you know, one game at a time.
+            </p>
             <label>
               Jump to a game
               <select

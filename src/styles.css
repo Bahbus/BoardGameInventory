@@ -1042,7 +1042,7 @@ output {
 }
 
 .wishlist-heading p {
-  max-width: 680px;
+  max-width: none;
   margin: 0;
   color: #6b6075;
   line-height: 1.6;
@@ -1478,6 +1478,13 @@ output {
   background: rgba(255, 255, 255, 0.78);
 }
 
+.setup-toolbar-guidance {
+  display: none;
+  margin: 0;
+  color: #6b6075;
+  font-size: 0.82rem;
+}
+
 .setup-complete {
   display: grid;
   justify-items: start;
@@ -1907,10 +1914,7 @@ footer p {
   }
 
   .setup-overview {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(320px, 480px);
-    align-items: start;
-    gap: 2rem;
+    display: block;
   }
 
   .setup-overview h1 {
@@ -1918,10 +1922,15 @@ footer p {
   }
 
   .setup-overview-copy {
-    justify-self: end;
-    max-width: none;
-    margin-top: 1.35rem;
-    text-align: right;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
   }
 
   .setup-workspace {
@@ -1995,7 +2004,11 @@ footer p {
   }
 
   .setup-workspace .setup-toolbar {
-    justify-content: flex-end;
+    justify-content: space-between;
+  }
+
+  .setup-toolbar-guidance {
+    display: block;
   }
 
   .wishlist-grid {
@@ -2111,11 +2124,17 @@ footer p {
   .setup-progress-compact {
     grid-column: 2;
     justify-self: end;
+    width: 100%;
   }
 
   .setup-overview-copy {
+    grid-row: 2;
     margin: 0;
     text-align: right;
+  }
+
+  .setup-progress-compact {
+    grid-row: 1;
   }
 }
 
@@ -2300,6 +2319,15 @@ footer p {
     width: 100%;
   }
 
+  .setup-progress-compact {
+    order: 2;
+  }
+
+  .setup-overview-copy {
+    order: 3;
+    width: 100%;
+  }
+
   .setup-downloads {
     align-items: stretch;
     flex-direction: column;
@@ -2342,7 +2370,18 @@ footer p {
   }
 
   .site-header nav {
+    gap: 0;
+    padding: 0;
+    overflow: hidden;
     flex-wrap: wrap;
+  }
+
+  .site-header nav button {
+    border-radius: 0;
+  }
+
+  .site-header nav:not(:has(button:nth-child(5))) button {
+    min-width: 50%;
   }
 }
 
