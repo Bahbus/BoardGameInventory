@@ -453,6 +453,9 @@ test("guides house answers one game at a time and keeps progress locally", async
     const accessBox = await page.locator(".setup-access-bar").boundingBox();
     const setupBox = await page.locator(".setup-shell").boundingBox();
     expect(accessBox!.width).toBeCloseTo(setupBox!.width, 0);
+    const setupNavigatorBox = await setupNavigator.boundingBox();
+    const setupMainBox = await page.locator(".setup-workspace-main").boundingBox();
+    expect(setupNavigatorBox!.height).toBeLessThan(setupMainBox!.height);
     const overviewTitleBox = await page.locator(".setup-overview-title").boundingBox();
     const overviewCopyBox = await page.locator(".setup-overview-copy").boundingBox();
     expect(overviewCopyBox!.x).toBeGreaterThan(overviewTitleBox!.x);
@@ -578,6 +581,50 @@ test("keeps the guided setup screen free of detectable accessibility violations"
   await expect(page.getByRole("heading", { name: "Tell us about the games" })).toBeVisible();
   const results = await new AxeBuilder({ page }).analyze();
   expect(results.violations).toEqual([]);
+});
+
+test("fits a long setup game list to the questionnaire height", async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1280, "Wide-screen navigator only");
+  const setupGames = Array.from({ length: 56 }, (_, index) => ({
+    ...setupGame,
+    slug: `game-${String(index + 1).padStart(2, "0")}`,
+    title: `Game ${String(index + 1).padStart(2, "0")}`
+  }));
+  await page.route("**/test-setup-service/api/setup/questionnaire", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ schemaVersion: 2, sourceSha: setupSourceSha, games: setupGames })
+    })
+  );
+  await allowSetup(page);
+  await page.getByRole("button", { name: "Setup", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Game 01" })).toBeVisible();
+
+  const expectAlignedBottoms = async () => {
+    const navigatorBox = await page.locator(".setup-navigator").boundingBox();
+    const questionnaireBox = await page.locator(".setup-workspace-main").boundingBox();
+    expect(navigatorBox).not.toBeNull();
+    expect(questionnaireBox).not.toBeNull();
+    expect(navigatorBox!.y + navigatorBox!.height).toBeCloseTo(
+      questionnaireBox!.y + questionnaireBox!.height,
+      0
+    );
+  };
+
+  await expectAlignedBottoms();
+  await page
+    .getByRole("group", { name: "Mood or vibe" })
+    .getByRole("button", { name: "Show all 9 mood or vibe options" })
+    .click();
+  await page
+    .getByRole("group", { name: "Content considerations" })
+    .getByRole("button", { name: "Show all 8 content considerations options" })
+    .click();
+  await page
+    .getByRole("group", { name: "Accessibility considerations" })
+    .getByRole("button", { name: "Show all 7 accessibility considerations options" })
+    .click();
+  await expectAlignedBottoms();
 });
 
 test("keeps setup hidden until collaborator access is verified", async ({ page }) => {
