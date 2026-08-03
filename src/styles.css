@@ -1063,6 +1063,67 @@ output {
   width: 100%;
 }
 
+.wishlist-request-dialog {
+  position: fixed;
+  z-index: 41;
+  top: 50%;
+  left: 50%;
+  width: min(560px, calc(100% - 2rem));
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: 1.25rem;
+  background: var(--paper);
+  box-shadow: 0 24px 80px rgb(35 27 51 / 32%);
+  transform: translate(-50%, -50%);
+}
+
+.wishlist-request-dialog > header {
+  position: sticky;
+  z-index: 2;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.8rem 1rem;
+  border-bottom: 1px solid var(--line);
+  background: rgb(255 255 255 / 96%);
+}
+
+.wishlist-request-dialog h2,
+.wishlist-request-dialog .eyebrow {
+  margin: 0;
+}
+
+.wishlist-request-dialog form {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem;
+}
+
+.wishlist-request-dialog label {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.wishlist-request-dialog textarea {
+  min-height: 5rem;
+}
+
+.wishlist-request-intro {
+  margin: 0 0 0.15rem;
+  color: #6b6075;
+  line-height: 1.5;
+}
+
+.wishlist-request-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.65rem;
+  padding-top: 0.15rem;
+}
+
 .wishlist-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1388,14 +1449,6 @@ output {
   margin-bottom: 0;
   color: #6b6075;
   line-height: 1.6;
-}
-
-.setup-overview-copy span {
-  display: block;
-}
-
-.setup-overview-copy span + span {
-  margin-top: 0.15rem;
 }
 
 .setup-progress {
@@ -2162,6 +2215,11 @@ footer p {
 
   .wishlist-toolbar {
     grid-template-columns: 1fr;
+  }
+
+  .wishlist-request-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
   }
 
   .cover-wrap {
