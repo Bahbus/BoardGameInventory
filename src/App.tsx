@@ -981,12 +981,58 @@ const wishlistStatus = {
 
 function WishlistPanel({ games }: { games: CatalogWishlistGame[] }) {
   const [query, setQuery] = useState("");
+  const [requestOpen, setRequestOpen] = useState(false);
+  const [requestName, setRequestName] = useState("");
+  const [requestSource, setRequestSource] = useState("");
+  const [requestReasons, setRequestReasons] = useState("");
+  const [requestNotes, setRequestNotes] = useState("");
+  const requestTrigger = useRef<HTMLButtonElement>(null);
+  const requestNameInput = useRef<globalThis.HTMLInputElement>(null);
+  const requestDialog = useRef<globalThis.HTMLElement>(null);
+  const parsedSource = parseGameSource(requestSource);
+  const sourceInvalid = Boolean(
+    requestSource.trim() && !parsedSource.bggId && !parsedSource.sourceUrl
+  );
   const requestUrl = buildWishlistIssueUrl(REPOSITORY_URL, {
-    bggId: "",
-    sourceUrl: "",
-    name: "",
-    notes: ""
+    bggId: parsedSource.bggId,
+    sourceUrl: parsedSource.sourceUrl,
+    name: requestName,
+    reasons: requestReasons,
+    notes: requestNotes
   });
+
+  const closeRequest = useCallback(() => {
+    setRequestOpen(false);
+    window.requestAnimationFrame(() => requestTrigger.current?.focus());
+  }, []);
+
+  useEffect(() => {
+    if (!requestOpen) return;
+    requestNameInput.current?.focus();
+    const handleDialogKeys = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        closeRequest();
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const focusable = Array.from(
+        requestDialog.current?.querySelectorAll<globalThis.HTMLElement>(
+          "button:not(:disabled), input:not(:disabled), textarea:not(:disabled), [href]"
+        ) ?? []
+      );
+      const first = focusable[0];
+      const last = focusable.at(-1);
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last?.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first?.focus();
+      }
+    };
+    window.addEventListener("keydown", handleDialogKeys);
+    return () => window.removeEventListener("keydown", handleDialogKeys);
+  }, [closeRequest, requestOpen]);
   const visible = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase();
     const filtered = normalized
@@ -1026,10 +1072,109 @@ function WishlistPanel({ games }: { games: CatalogWishlistGame[] }) {
             placeholder="Search the wish list…"
           />
         </label>
-        <ExternalLink class="primary-button" href={requestUrl}>
+        <button
+          class="primary-button"
+          type="button"
+          ref={requestTrigger}
+          onClick={() => setRequestOpen(true)}
+        >
           Request a game
-        </ExternalLink>
+        </button>
       </div>
+
+      {requestOpen && (
+        <>
+          <button
+            class="inspector-backdrop"
+            type="button"
+            aria-label="Close game request"
+            onClick={closeRequest}
+          />
+          <section
+            ref={requestDialog}
+            class="wishlist-request-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="wishlist-request-title"
+          >
+            <header>
+              <div>
+                <span class="eyebrow">Wish-list suggestion</span>
+                <h2 id="wishlist-request-title">Request a game</h2>
+              </div>
+              <button
+                class="secondary-button dark compact-button inspector-close"
+                type="button"
+                onClick={closeRequest}
+              >
+                Close <span aria-hidden="true">×</span>
+              </button>
+            </header>
+            <form
+              onSubmit={(event) => {
+                event.preventDefault();
+                window.open(requestUrl, "_blank", "noopener,noreferrer");
+              }}
+            >
+              <p class="wishlist-request-intro">
+                Tell us what caught your eye. We’ll prefill the public request for you to review and
+                submit on GitHub.
+              </p>
+              <label>
+                Game name
+                <input
+                  ref={requestNameInput}
+                  required
+                  value={requestName}
+                  onInput={(event) => setRequestName(event.currentTarget.value)}
+                  placeholder="For example: Sky Team"
+                />
+              </label>
+              <label>
+                BGG link, BGG ID, or product page <span class="optional-label">(optional)</span>
+                <input
+                  value={requestSource}
+                  aria-invalid={sourceInvalid}
+                  aria-describedby={sourceInvalid ? "wishlist-source-error" : undefined}
+                  onInput={(event) => setRequestSource(event.currentTarget.value)}
+                  placeholder="https://boardgamegeek.com/boardgame/…"
+                />
+              </label>
+              {sourceInvalid && (
+                <p class="field-error" id="wishlist-source-error" role="alert">
+                  Enter a BGG ID or a complete web address beginning with http:// or https://.
+                </p>
+              )}
+              <label>
+                Why should we consider it?
+                <textarea
+                  required
+                  value={requestReasons}
+                  onInput={(event) => setRequestReasons(event.currentTarget.value)}
+                  placeholder="What group, mood, or experience would make this a good fit?"
+                />
+              </label>
+              <label>
+                Other notes <span class="optional-label">(optional)</span>
+                <textarea
+                  value={requestNotes}
+                  onInput={(event) => setRequestNotes(event.currentTarget.value)}
+                  placeholder="Edition, availability, or anything else useful"
+                />
+              </label>
+              <div class="wishlist-request-actions">
+                <button class="secondary-button dark" type="button" onClick={closeRequest}>
+                  Cancel
+                </button>
+                <button class="primary-button" type="submit" disabled={sourceInvalid}>
+                  Review on GitHub <span aria-hidden="true">↗</span>
+                  <span class="sr-only"> in a new tab</span>
+                </button>
+              </div>
+            </form>
+          </section>
+        </>
+      )}
 
       {!games.length ? (
         <div class="empty-state">

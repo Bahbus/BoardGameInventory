@@ -69,10 +69,12 @@ describe("wishlist request links", () => {
       bggId: "",
       sourceUrl: "",
       name: "Sky Team",
+      reasons: "A cooperative two-player game would fit weeknights.",
       notes: ""
     });
     expect(url).toContain("template=game-request.yml");
     expect(url).toContain("game-name=Sky+Team");
+    expect(url).toContain("reasons=A+cooperative+two-player+game+would+fit+weeknights.");
     expect(url).not.toContain("bgg-id");
     expect(url).not.toContain("source-url");
   });

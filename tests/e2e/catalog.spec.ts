@@ -340,10 +340,49 @@ test("keeps unowned games in a searchable wish list and out of roulette", async 
   await expect(
     page.getByRole("region", { name: "Wish list & requests" }).locator("input")
   ).toHaveCount(1);
-  const requestLink = page.getByRole("link", { name: /Request a game/ });
-  await expect(requestLink).toHaveClass(/primary-button/);
-  await expect(requestLink).toHaveAttribute("href", /template=game-request\.yml/);
-  await expect(requestLink).toHaveAttribute("target", "_blank");
+  const requestButton = page.getByRole("button", { name: "Request a game" });
+  await expect(requestButton).toHaveClass(/primary-button/);
+  await requestButton.click();
+  const requestDialog = page.getByRole("dialog", { name: "Request a game" });
+  await expect(requestDialog).toBeVisible();
+  await expect(page.getByLabel("Game name")).toBeFocused();
+  expect(
+    (await new AxeBuilder({ page }).include(".wishlist-request-dialog").analyze()).violations
+  ).toEqual([]);
+  await page.getByLabel("Game name").fill("Sky Team");
+  await page
+    .getByLabel(/BGG link, BGG ID, or product page/)
+    .fill("https://boardgamegeek.com/boardgame/373106/sky-team");
+  await page
+    .getByLabel("Why should we consider it?")
+    .fill("A cooperative two-player game would fit weeknights.");
+  await page.getByLabel(/Other notes/).fill("Prefer the current edition.");
+  await page.evaluate(() => {
+    globalThis.open = (url, target, features) => {
+      globalThis.sessionStorage.setItem(
+        "opened-wishlist-request",
+        JSON.stringify({ url: String(url), target, features })
+      );
+      return null;
+    };
+  });
+  await page.getByRole("button", { name: /Review on GitHub/ }).click();
+  const openedRequest = JSON.parse(
+    (await page.evaluate(() => globalThis.sessionStorage.getItem("opened-wishlist-request"))) ??
+      "{}"
+  );
+  expect(openedRequest).toMatchObject({ target: "_blank", features: "noopener,noreferrer" });
+  const issueUrl = new URL(openedRequest.url);
+  expect(issueUrl.searchParams.get("template")).toBe("game-request.yml");
+  expect(issueUrl.searchParams.get("game-name")).toBe("Sky Team");
+  expect(issueUrl.searchParams.get("bgg-id")).toBe("373106");
+  expect(issueUrl.searchParams.get("reasons")).toBe(
+    "A cooperative two-player game would fit weeknights."
+  );
+  expect(issueUrl.searchParams.get("notes")).toBe("Prefer the current edition.");
+  await page.getByRole("button", { name: "Cancel" }).click();
+  await expect(requestDialog).toBeHidden();
+  await expect(requestButton).toBeFocused();
   await page.getByRole("searchbox", { name: "Search wish list" }).fill("missing");
   await expect(
     page.getByRole("heading", { name: "No wish-list game matches that search" })
@@ -616,10 +655,12 @@ test("guides house answers one game at a time and keeps progress locally", async
     await expect(setupNavigator).toBeHidden();
     await expect(page.getByLabel("Jump to a game")).toBeVisible();
   }
-  await expect(page.locator(".setup-overview-copy span")).toHaveText([
-    "Answer what you know, one game at a time.",
+  await expect(page.locator(".setup-overview-copy")).toHaveText(
+    "Answer what you know, one game at a time."
+  );
+  await expect(page.locator(".setup-autosave")).toHaveText(
     "Progress saves automatically on this device."
-  ]);
+  );
   expect(
     await page
       .locator(".setup-privacy")
@@ -642,7 +683,7 @@ test("guides house answers one game at a time and keeps progress locally", async
   await expect(
     page.getByRole("group", { name: "Content considerations" }).getByLabel("Horror")
   ).toBeChecked();
-  await expect(page.getByText("Progress saves automatically in this browser.")).toBeVisible();
+  await expect(page.getByText("Progress saves automatically on this device.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Back up progress" })).toHaveCount(0);
   await expect(page.getByText("Restore progress", { exact: true })).toHaveCount(0);
   await page.getByLabel("Have you learned it?").selectOption("yes");

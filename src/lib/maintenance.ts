@@ -13,6 +13,7 @@ export interface WishlistRequest {
   bggId: string;
   sourceUrl: string;
   name: string;
+  reasons: string;
   notes: string;
 }
 
@@ -62,6 +63,7 @@ export function buildWishlistIssueUrl(repositoryUrl: string, request: WishlistRe
     "bgg-id": request.bggId,
     "source-url": request.sourceUrl,
     "game-name": request.name,
+    reasons: request.reasons,
     notes: request.notes
   });
   [...params.entries()].forEach(([key, value]) => {

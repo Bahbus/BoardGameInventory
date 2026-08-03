@@ -409,10 +409,7 @@ export function HouseEditor({
           <span class="eyebrow">Guided collection setup</span>
           <h1 id="setup-title">Tell us about the games</h1>
         </div>
-        <p class="setup-overview-copy">
-          <span>Answer what you know, one game at a time.</span>
-          <span>Progress saves automatically on this device.</span>
-        </p>
+        <p class="setup-overview-copy">Answer what you know, one game at a time.</p>
         <div class="setup-progress setup-progress-compact">
           <strong>
             {completed.size} of {games.length}
@@ -476,7 +473,7 @@ export function HouseEditor({
                 class={progressSaved ? "setup-autosave" : "setup-autosave setup-autosave-error"}
               >
                 {progressSaved
-                  ? "Progress saves automatically in this browser."
+                  ? "Progress saves automatically on this device."
                   : "This browser could not save progress automatically."}
               </span>
               <button
