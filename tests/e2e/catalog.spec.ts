@@ -78,6 +78,61 @@ test("orders related navigation together and hides completed Setup", async ({ pa
   await expect(page.getByRole("button", { name: "Setup", exact: true })).toHaveCount(0);
 });
 
+test("gives each primary view its own heading without repeating the library hero", async ({
+  page
+}) => {
+  await expect(page.locator(".hero")).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Find the game that fits the table." })
+  ).toBeVisible();
+
+  await page.getByRole("button", { name: "Roulette", exact: true }).click();
+  await expect(page.locator(".hero")).toHaveCount(0);
+  await expect(page.getByRole("heading", { level: 1, name: "Game Night Roulette" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Wish list", exact: true }).click();
+  await expect(page.locator(".hero")).toHaveCount(0);
+  await expect(page.getByRole("heading", { level: 1, name: "Wish list & requests" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Manage", exact: true }).click();
+  await expect(page.locator(".hero")).toHaveCount(0);
+  await expect(page.getByRole("heading", { level: 1, name: "Manage the library" })).toBeVisible();
+});
+
+test("keeps intermediate navigation and filters legible", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "desktop", "Intermediate breakpoint contract");
+
+  await page.setViewportSize({ width: 768, height: 1024 });
+  const navigation = page.getByRole("navigation", { name: "Primary" });
+  const navigationRows = await navigation
+    .getByRole("button")
+    .evaluateAll((buttons) =>
+      Array.from(new Set(buttons.map((button) => Math.round(button.getBoundingClientRect().top))))
+    );
+  expect(navigationRows).toHaveLength(1);
+  const navigationBox = await navigation.boundingBox();
+  const brandBox = await page.locator(".brand").boundingBox();
+  expect(navigationBox!.y).toBeGreaterThan(brandBox!.y);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(768);
+
+  await page.setViewportSize({ width: 430, height: 900 });
+  const compactNavigationRows = await navigation
+    .getByRole("button")
+    .evaluateAll((buttons) =>
+      Array.from(new Set(buttons.map((button) => Math.round(button.getBoundingClientRect().top))))
+    );
+  expect(compactNavigationRows).toHaveLength(2);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(430);
+
+  await page.setViewportSize({ width: 1024, height: 900 });
+  const filterColumnCount = await page
+    .locator(".filter-grid")
+    .first()
+    .evaluate((grid) => globalThis.getComputedStyle(grid).gridTemplateColumns.split(" ").length);
+  expect(filterColumnCount).toBe(3);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1024);
+});
+
 test("filters the library and preserves shareable settings", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "3 games ready" })).toBeVisible();
   await page.getByLabel("Group size").fill("6");

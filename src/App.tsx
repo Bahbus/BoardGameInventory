@@ -632,7 +632,7 @@ function Roulette({
     <section class="roulette-card" aria-labelledby="roulette-title">
       <div class="roulette-copy">
         <span class="eyebrow">Let chance break the tie</span>
-        <h2 id="roulette-title">Game Night Roulette</h2>
+        <h1 id="roulette-title">Game Night Roulette</h1>
         <p>Every qualifying game has a chance. Better preference matches get a stronger pull.</p>
         <div class="odds-note">
           <span>{games.length} eligible</span>
@@ -797,7 +797,7 @@ function Maintenance({ games }: { games: CatalogGame[] }) {
     <section class="maintenance-card">
       <div class="maintenance-intro">
         <span class="eyebrow">Library management</span>
-        <h2>Manage the library</h2>
+        <h1>Manage the library</h1>
         <p>
           Choose one task and identify the game here. GitHub will open a review form for the
           remaining details. Nothing changes until its pull request is reviewed and merged.
@@ -1000,7 +1000,7 @@ function WishlistPanel({ games }: { games: CatalogWishlistGame[] }) {
       <div class="wishlist-heading">
         <div>
           <span class="eyebrow">Games we’re considering</span>
-          <h2 id="wishlist-title">Wish list & requests</h2>
+          <h1 id="wishlist-title">Wish list & requests</h1>
           <p>
             These games are not owned yet, so they stay out of group filters and roulette until they
             join the shelves.
@@ -1196,7 +1196,7 @@ export function App() {
       </header>
 
       <main id="main">
-        {view !== "setup" && view !== "maintain" && (
+        {view === "library" && (
           <section class="hero">
             <div class="hero-copy">
               <span class="eyebrow">Your shelves, sorted for tonight</span>
