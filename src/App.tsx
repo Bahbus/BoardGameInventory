@@ -146,7 +146,10 @@ function FilterPanel({
           <span class="eyebrow">Build your game night</span>
           <h2>Who’s playing?</h2>
         </div>
-        <button class="text-button" onClick={() => onChange({ ...DEFAULT_PREFERENCES })}>
+        <button
+          class="secondary-button dark compact-button"
+          onClick={() => onChange({ ...DEFAULT_PREFERENCES })}
+        >
           Reset
         </button>
       </div>
@@ -448,7 +451,7 @@ function GameCard({
         )}
         <div class="card-links">
           <button
-            class="card-inspect-button"
+            class="secondary-button dark compact-button"
             type="button"
             data-inspector-trigger={game.slug}
             aria-haspopup="dialog"
@@ -499,7 +502,12 @@ function GameInspector({ entry, onClose }: { entry: ScoredGame; onClose: () => v
     <div class="game-inspector" role="dialog" aria-labelledby="game-inspector-title">
       <div class="game-inspector-heading">
         <span class="eyebrow">Game details</span>
-        <button ref={closeButton} class="inspector-close" type="button" onClick={onClose}>
+        <button
+          ref={closeButton}
+          class="secondary-button dark compact-button inspector-close"
+          type="button"
+          onClick={onClose}
+        >
           Close <span aria-hidden="true">×</span>
         </button>
       </div>
@@ -655,7 +663,7 @@ function Roulette({
           )}
           {drawn.length > 0 && (
             <button
-              class="text-button light"
+              class="secondary-button compact-button"
               onClick={() => {
                 setDrawn([]);
                 setWinner(undefined);
@@ -957,9 +965,8 @@ function Maintenance({ games }: { games: CatalogGame[] }) {
           <span class="sr-only"> in a new tab</span>
         </button>
         <p class="form-help">
-          This opens a prefilled GitHub form in a new tab; it does not submit the request yet.
-          Maintainer requests can produce a validated pull request, while public requests wait for
-          approval.
+          Nothing is submitted until the GitHub form is completed. Maintainer requests can produce a
+          validated pull request, while public requests wait for approval.
         </p>
       </form>
     </section>
@@ -974,17 +981,12 @@ const wishlistStatus = {
 
 function WishlistPanel({ games }: { games: CatalogWishlistGame[] }) {
   const [query, setQuery] = useState("");
-  const [requestName, setRequestName] = useState("");
-  const requestUrl = useMemo(
-    () =>
-      buildWishlistIssueUrl(REPOSITORY_URL, {
-        bggId: "",
-        sourceUrl: "",
-        name: requestName,
-        notes: ""
-      }),
-    [requestName]
-  );
+  const requestUrl = buildWishlistIssueUrl(REPOSITORY_URL, {
+    bggId: "",
+    sourceUrl: "",
+    name: "",
+    notes: ""
+  });
   const visible = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase();
     const filtered = normalized
@@ -1024,29 +1026,16 @@ function WishlistPanel({ games }: { games: CatalogWishlistGame[] }) {
             placeholder="Search the wish list…"
           />
         </label>
-        <div class="wishlist-request-control">
-          <label>
-            Game to suggest <span class="optional-label">(optional)</span>
-            <input
-              value={requestName}
-              onInput={(event) => setRequestName(event.currentTarget.value)}
-              placeholder="Prefill the GitHub form"
-            />
-          </label>
-          <ExternalLink class="primary-button" href={requestUrl}>
-            Open request form
-          </ExternalLink>
-        </div>
+        <ExternalLink class="primary-button" href={requestUrl}>
+          Request a game
+        </ExternalLink>
       </div>
 
       {!games.length ? (
         <div class="empty-state">
           <span aria-hidden="true">◇</span>
           <h2>The wish list is ready for its first suggestion</h2>
-          <p>
-            Suggest one above to open a public GitHub form with the game name and anything that
-            makes it appealing.
-          </p>
+          <p>Tell us what looks interesting and why it might fit the group.</p>
         </div>
       ) : !visible.length ? (
         <div class="empty-state">
@@ -1318,7 +1307,10 @@ export function App() {
                           <option value="players">Player count</option>
                         </select>
                       </label>
-                      <button class="share-button" onClick={() => void copyShareLink()}>
+                      <button
+                        class="secondary-button dark compact-button"
+                        onClick={() => void copyShareLink()}
+                      >
                         <span aria-live="polite">
                           {shareStatus === "copied"
                             ? "Copied!"

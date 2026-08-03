@@ -759,7 +759,7 @@ export function HouseEditor({
                 Previous
               </button>
               <button
-                class="text-button"
+                class="secondary-button dark"
                 disabled={index === games.length - 1}
                 onClick={() => setIndex(Math.min(games.length - 1, index + 1))}
               >

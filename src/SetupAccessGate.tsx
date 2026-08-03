@@ -128,7 +128,7 @@ export function SetupAccessGate() {
             Verified collaborator: <strong>@{state.session.login}</strong>
           </span>
           <button
-            class="text-button"
+            class="secondary-button dark compact-button"
             onClick={() => {
               clearSetupAccessSession();
               setState({ kind: "required" });
