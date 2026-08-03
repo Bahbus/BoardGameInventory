@@ -385,13 +385,14 @@ export function HouseEditor({
   return (
     <section class="setup-shell" aria-labelledby="setup-title">
       <div class="setup-overview">
-        <div>
+        <div class="setup-overview-title">
           <span class="eyebrow">Guided collection setup</span>
           <h1 id="setup-title">Tell us about the games</h1>
-          <p>
-            Answer what you know, one game at a time. Progress stays on this device while you work.
-          </p>
         </div>
+        <p class="setup-overview-copy">
+          <span>Answer what you know, one game at a time.</span>
+          <span>Progress saves automatically on this device.</span>
+        </p>
         <div class="setup-progress setup-progress-compact">
           <strong>
             {completed.size} of {games.length}
