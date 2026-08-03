@@ -165,6 +165,12 @@ test("keeps intermediate navigation and filters legible", async ({ page }, testI
       Array.from(new Set(buttons.map((button) => Math.round(button.getBoundingClientRect().top))))
     );
   expect(compactNavigationRows).toHaveLength(2);
+  const compactNavigationBox = await navigation.boundingBox();
+  const activeLibraryBox = await navigation.getByRole("button", { name: "Library" }).boundingBox();
+  expect(activeLibraryBox!.x).toBeCloseTo(compactNavigationBox!.x + 1, 0);
+  expect(activeLibraryBox!.y).toBeCloseTo(compactNavigationBox!.y + 1, 0);
+  expect(activeLibraryBox!.width).toBeCloseTo((compactNavigationBox!.width - 2) / 3, 0);
+  expect(activeLibraryBox!.height).toBeCloseTo((compactNavigationBox!.height - 2) / 2, 0);
   expect(
     await navigation
       .getByRole("button")
@@ -172,6 +178,15 @@ test("keeps intermediate navigation and filters legible", async ({ page }, testI
         buttons.every((button) => globalThis.getComputedStyle(button).whiteSpace === "nowrap")
       )
   ).toBe(true);
+  await navigation.getByRole("button", { name: "Manage" }).click();
+  const activeManageBox = await navigation.getByRole("button", { name: "Manage" }).boundingBox();
+  expect(activeManageBox!.x).toBeCloseTo(compactNavigationBox!.x + 1, 0);
+  expect(activeManageBox!.y + activeManageBox!.height).toBeCloseTo(
+    compactNavigationBox!.y + compactNavigationBox!.height - 1,
+    0
+  );
+  expect(activeManageBox!.width).toBeCloseTo((compactNavigationBox!.width - 2) / 2, 0);
+  await navigation.getByRole("button", { name: "Library" }).click();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(480);
 
   await page.setViewportSize({ width: 1024, height: 900 });
@@ -342,6 +357,14 @@ test("keeps unowned games in a searchable wish list and out of roulette", async 
 
   await page.getByRole("button", { name: "Wish list" }).click();
   await expect(page.getByRole("heading", { name: "Wish list & requests" })).toBeVisible();
+  if ((page.viewportSize()?.width ?? 0) >= 1000) {
+    const wishListIntro = page.locator(".wishlist-heading p");
+    const wishListIntroMetrics = await wishListIntro.evaluate((element) => ({
+      height: element.getBoundingClientRect().height,
+      lineHeight: Number.parseFloat(globalThis.getComputedStyle(element).lineHeight)
+    }));
+    expect(wishListIntroMetrics.height).toBeLessThanOrEqual(wishListIntroMetrics.lineHeight * 1.1);
+  }
   await expect(page.getByRole("heading", { name: "Future Game" })).toBeVisible();
   await expect(page.locator(".wishlist-cover")).not.toContainText("Future Game");
   await expect(page.getByText("Planning to buy")).toBeVisible();
@@ -655,10 +678,15 @@ test("guides house answers one game at a time and keeps progress locally", async
     const setupNavigatorBox = await setupNavigator.boundingBox();
     const setupMainBox = await page.locator(".setup-workspace-main").boundingBox();
     expect(setupNavigatorBox!.height).toBeLessThan(setupMainBox!.height);
-    const overviewTitleBox = await page.locator(".setup-overview-title").boundingBox();
+    const toolbarGuidance = page.locator(".setup-toolbar-guidance");
+    await expect(toolbarGuidance).toBeVisible();
+    await expect(toolbarGuidance).toHaveText("Answer what you know, one game at a time.");
+    const guidanceBox = await toolbarGuidance.boundingBox();
+    const autosaveBox = await page.locator(".setup-autosave").boundingBox();
     const overviewCopyBox = await page.locator(".setup-overview-copy").boundingBox();
-    expect(overviewCopyBox!.x).toBeGreaterThan(overviewTitleBox!.x);
-    expect(overviewCopyBox!.y).toBeLessThan(overviewTitleBox!.y + overviewTitleBox!.height);
+    expect(guidanceBox!.x + guidanceBox!.width).toBeLessThan(autosaveBox!.x);
+    expect(overviewCopyBox!.width).toBe(1);
+    expect(overviewCopyBox!.height).toBe(1);
   } else {
     await expect(setupNavigator).toBeHidden();
     await expect(page.getByLabel("Jump to a game")).toBeVisible();
@@ -806,7 +834,8 @@ test("keeps intermediate setup guidance and actions legible", async ({ page }, t
   const progressBox = await page.locator(".setup-progress-compact").boundingBox();
   expect(titleBox!.x + titleBox!.width).toBeLessThan(copyBox!.x);
   expect(progressBox!.x).toBeGreaterThanOrEqual(copyBox!.x);
-  expect(progressBox!.y).toBeGreaterThan(copyBox!.y);
+  expect(progressBox!.y + progressBox!.height).toBeLessThan(copyBox!.y);
+  expect(progressBox!.width).toBeCloseTo(copyBox!.width, 0);
 
   const autosaveBox = await page.locator(".setup-autosave").boundingBox();
   const downloadButton = page.getByRole("button", { name: "Download CSV copy" });
@@ -818,6 +847,13 @@ test("keeps intermediate setup guidance and actions legible", async ({ page }, t
     )
   ).toBe(true);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(800);
+
+  await page.setViewportSize({ width: 480, height: 900 });
+  const compactCopyBox = await page.locator(".setup-overview-copy").boundingBox();
+  const compactProgressBox = await page.locator(".setup-progress-compact").boundingBox();
+  expect(compactProgressBox!.y + compactProgressBox!.height).toBeLessThan(compactCopyBox!.y);
+  expect(compactProgressBox!.width).toBeCloseTo(compactCopyBox!.width, 0);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(480);
 });
 
 test("fits a long setup game list to the questionnaire height", async ({ page }) => {
