@@ -99,6 +99,47 @@ test("gives each primary view its own heading without repeating the library hero
   await expect(page.getByRole("heading", { level: 1, name: "Manage the library" })).toBeVisible();
 });
 
+test("supports deep links and browser history between primary views", async ({ page }) => {
+  await page.goto("/?v=1&players=6&view=wishlist");
+  await expect(page.getByRole("heading", { level: 1, name: "Wish list & requests" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Roulette", exact: true }).click();
+  await expect(page).toHaveURL(/players=6.*view=roulette/);
+  await expect(page.getByRole("heading", { level: 1, name: "Game Night Roulette" })).toBeVisible();
+
+  await page.goBack();
+  await expect(page).toHaveURL(/players=6.*view=wishlist/);
+  await expect(page.getByRole("heading", { level: 1, name: "Wish list & requests" })).toBeVisible();
+});
+
+test("confirms when a shareable filter link is copied", async ({ page }) => {
+  await page.evaluate(() => {
+    Object.defineProperty(globalThis.navigator, "clipboard", {
+      configurable: true,
+      value: {
+        writeText: async (value: string) =>
+          globalThis.sessionStorage.setItem("copied-share-link", value)
+      }
+    });
+  });
+  await page.getByLabel("Group size").fill("6");
+  await page.getByRole("button", { name: "Copy link" }).click();
+
+  await expect(page.getByRole("button", { name: "Copied!" })).toBeVisible();
+  expect(await page.evaluate(() => globalThis.sessionStorage.getItem("copied-share-link"))).toMatch(
+    /\?v=1&players=6$/
+  );
+
+  await page.evaluate(() => {
+    Object.defineProperty(globalThis.navigator, "clipboard", {
+      configurable: true,
+      value: { writeText: async () => Promise.reject(new Error("denied")) }
+    });
+  });
+  await page.getByRole("button", { name: "Copied!" }).click();
+  await expect(page.getByRole("button", { name: "Copy failed" })).toBeVisible();
+});
+
 test("keeps intermediate navigation and filters legible", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "desktop", "Intermediate breakpoint contract");
 
@@ -216,7 +257,28 @@ test("prefills an authenticated GitHub maintenance request", async ({ page }) =>
     .getByLabel("BGG link or another product page")
     .fill("https://boardgamegeek.com/boardgame/68448/7-wonders");
   await expect(page.getByLabel("Stable slug")).toHaveValue("7-wonders");
-  await expect(page.getByRole("button", { name: /Continue game details on GitHub/ })).toBeEnabled();
+  const addButton = page.getByRole("button", { name: /Continue game details on GitHub/ });
+  await expect(addButton).toBeEnabled();
+  await page.evaluate(() => {
+    globalThis.open = (url, target, features) => {
+      globalThis.sessionStorage.setItem(
+        "opened-maintenance-request",
+        JSON.stringify({ url, target, features })
+      );
+      return null;
+    };
+  });
+  await addButton.click();
+  const openedRequest = JSON.parse(
+    (await page.evaluate(() => globalThis.sessionStorage.getItem("opened-maintenance-request"))) ??
+      "{}"
+  );
+  expect(openedRequest).toMatchObject({
+    target: "_blank",
+    features: "noopener,noreferrer"
+  });
+  expect(openedRequest.url).toContain("inventory-add.yml");
+  await expect(page.getByRole("heading", { name: "Manage the library" })).toBeVisible();
 
   await page.getByRole("radio", { name: "Update" }).check();
   await page.getByLabel("Game or expansion").selectOption("forest-council");
@@ -262,6 +324,10 @@ test("keeps unowned games in a searchable wish list and out of roulette", async 
   await expect(page.getByRole("heading", { name: "Wish list & requests" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Future Game" })).toBeVisible();
   await expect(page.getByText("Planning to buy")).toBeVisible();
+  await page.getByLabel("Game to suggest (optional)").fill("Future Game Deluxe");
+  const requestLink = page.getByRole("link", { name: /Open request form/ });
+  await expect(requestLink).toHaveAttribute("href", /game-name=Future\+Game\+Deluxe/);
+  await expect(requestLink).toHaveAttribute("target", "_blank");
   await page.getByRole("searchbox", { name: "Search wish list" }).fill("missing");
   await expect(
     page.getByRole("heading", { name: "No wish-list game matches that search" })
@@ -321,6 +387,21 @@ test("shows a local-only game with its product source and slug-based edit link",
 test("has no automatically detectable accessibility violations", async ({ page }) => {
   const results = await new AxeBuilder({ page }).analyze();
   expect(results.violations).toEqual([]);
+});
+
+test("labels external destinations and opens them safely", async ({ page }) => {
+  const githubLink = page.locator(".github-link");
+  await expect(githubLink).toHaveAttribute("target", "_blank");
+  await expect(githubLink).toHaveAttribute("rel", "noopener noreferrer");
+  await expect(githubLink).toContainText("GitHub");
+
+  const externalLinksAreSafe = await page.locator('a[target="_blank"]').evaluateAll((links) =>
+    links.every((link) => {
+      const rel = link.getAttribute("rel")?.split(/\s+/) ?? [];
+      return rel.includes("noopener") && rel.includes("noreferrer");
+    })
+  );
+  expect(externalLinksAreSafe).toBe(true);
 });
 
 test("supports the GitHub Pages repository path", async ({ page }) => {
