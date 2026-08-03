@@ -10,7 +10,12 @@ export function ExternalLink({
   children: ComponentChildren;
 }) {
   return (
-    <a class={className} href={href} target="_blank" rel="noopener noreferrer">
+    <a
+      class={`external-link${className ? ` ${className}` : ""}`}
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+    >
       {children} <span aria-hidden="true">↗</span>
       <span class="sr-only"> (opens in a new tab)</span>
     </a>

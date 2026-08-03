@@ -123,7 +123,9 @@ test("confirms when a shareable filter link is copied", async ({ page }) => {
     });
   });
   await page.getByLabel("Group size").fill("6");
-  await page.getByRole("button", { name: "Copy link" }).click();
+  const copyButton = page.getByRole("button", { name: "Copy link" });
+  await expect(copyButton).toHaveClass(/secondary-button/);
+  await copyButton.click();
 
   await expect(page.getByRole("button", { name: "Copied!" })).toBeVisible();
   expect(await page.evaluate(() => globalThis.sessionStorage.getItem("copied-share-link"))).toMatch(
@@ -171,6 +173,16 @@ test("keeps intermediate navigation and filters legible", async ({ page }, testI
     .first()
     .evaluate((grid) => globalThis.getComputedStyle(grid).gridTemplateColumns.split(" ").length);
   expect(filterColumnCount).toBe(3);
+  const toolbarActions = page.locator(".toolbar-actions");
+  const toolbarColumnCount = await toolbarActions.evaluate(
+    (toolbar) => globalThis.getComputedStyle(toolbar).gridTemplateColumns.split(" ").length
+  );
+  const toolbarHeadingBox = await page
+    .getByRole("heading", { name: "3 games ready" })
+    .boundingBox();
+  const toolbarActionsBox = await toolbarActions.boundingBox();
+  expect(toolbarColumnCount).toBe(3);
+  expect(toolbarActionsBox!.y).toBeGreaterThan(toolbarHeadingBox!.y);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1024);
 });
 
@@ -187,6 +199,7 @@ test("inspects a game without losing the catalog position", async ({ page }, tes
     .getByRole("article")
     .filter({ has: page.getByRole("heading", { name: "Forest Council", exact: true }) })
     .getByRole("button", { name: "Details" });
+  await expect(trigger).toHaveClass(/secondary-button/);
   await trigger.click();
 
   const inspector = page.getByRole("dialog", { name: "Forest Council" });
@@ -324,9 +337,12 @@ test("keeps unowned games in a searchable wish list and out of roulette", async 
   await expect(page.getByRole("heading", { name: "Wish list & requests" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Future Game" })).toBeVisible();
   await expect(page.getByText("Planning to buy")).toBeVisible();
-  await page.getByLabel("Game to suggest (optional)").fill("Future Game Deluxe");
-  const requestLink = page.getByRole("link", { name: /Open request form/ });
-  await expect(requestLink).toHaveAttribute("href", /game-name=Future\+Game\+Deluxe/);
+  await expect(
+    page.getByRole("region", { name: "Wish list & requests" }).locator("input")
+  ).toHaveCount(1);
+  const requestLink = page.getByRole("link", { name: /Request a game/ });
+  await expect(requestLink).toHaveClass(/primary-button/);
+  await expect(requestLink).toHaveAttribute("href", /template=game-request\.yml/);
   await expect(requestLink).toHaveAttribute("target", "_blank");
   await page.getByRole("searchbox", { name: "Search wish list" }).fill("missing");
   await expect(
