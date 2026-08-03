@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "preact/hooks";
+import { ExternalLink } from "./ExternalLink";
 import { SetupAccessGate } from "./SetupAccessGate";
+import { buildAppUrl, parseAppView, type AppView } from "./lib/appNavigation";
 import {
   createStandalonePlayModes,
   effectiveModes,
@@ -8,7 +10,7 @@ import {
   sortScoredGames,
   weightedDraw
 } from "./lib/catalog";
-import { DEFAULT_PREFERENCES, parsePreferences, serializePreferences } from "./lib/preferences";
+import { DEFAULT_PREFERENCES, parsePreferences } from "./lib/preferences";
 import {
   buildIssueUrl,
   buildWishlistIssueUrl,
@@ -29,8 +31,6 @@ import type {
 const STORAGE_KEY = "board-game-inventory:preferences:v1";
 const DRAWN_KEY = "board-game-inventory:drawn:v1";
 const REPOSITORY_URL = "https://github.com/Bahbus/BoardGameInventory";
-
-type View = "library" | "wishlist" | "roulette" | "setup" | "maintain";
 
 const isSetupAuthCallback = () => {
   if (typeof window === "undefined") return false;
@@ -62,6 +62,12 @@ function initialPreferences(): GroupPreferences {
   } catch {
     return DEFAULT_PREFERENCES;
   }
+}
+
+function initialView(): AppView {
+  if (typeof window === "undefined") return "library";
+  if (isSetupAuthCallback()) return "setup";
+  return parseAppView(window.location.search);
 }
 
 function ToggleList({
@@ -451,11 +457,11 @@ function GameCard({
             Details
           </button>
           {game.metadata.url && (
-            <a href={game.metadata.url} target="_blank" rel="noreferrer">
-              {game.bggId ? "View on BGG" : "View product source"} <span aria-hidden="true">↗</span>
-            </a>
+            <ExternalLink href={game.metadata.url}>
+              {game.bggId ? "View on BGG" : "View product source"}
+            </ExternalLink>
           )}
-          <a
+          <ExternalLink
             href={buildIssueUrl(REPOSITORY_URL, {
               operation: "update",
               bggId: game.bggId?.toString() ?? "",
@@ -468,7 +474,7 @@ function GameCard({
             })}
           >
             Suggest edit
-          </a>
+          </ExternalLink>
         </div>
       </div>
     </article>
@@ -567,11 +573,11 @@ function GameInspector({ entry, onClose }: { entry: ScoredGame; onClose: () => v
 
         <div class="inspector-links">
           {game.metadata.url && (
-            <a href={game.metadata.url} target="_blank" rel="noreferrer">
-              {game.bggId ? "View on BGG" : "View product source"} ↗
-            </a>
+            <ExternalLink href={game.metadata.url}>
+              {game.bggId ? "View on BGG" : "View product source"}
+            </ExternalLink>
           )}
-          <a
+          <ExternalLink
             href={buildIssueUrl(REPOSITORY_URL, {
               operation: "update",
               bggId: game.bggId?.toString() ?? "",
@@ -584,7 +590,7 @@ function GameInspector({ entry, onClose }: { entry: ScoredGame; onClose: () => v
             })}
           >
             Suggest edit
-          </a>
+          </ExternalLink>
         </div>
       </div>
     </div>
@@ -811,7 +817,7 @@ function Maintenance({ games }: { games: CatalogGame[] }) {
         class="maintenance-form"
         onSubmit={(event) => {
           event.preventDefault();
-          window.location.assign(url);
+          window.open(url, "_blank", "noopener,noreferrer");
         }}
       >
         <fieldset class="operation-picker">
@@ -948,10 +954,12 @@ function Maintenance({ games }: { games: CatalogGame[] }) {
         </div>
         <button class="primary-button" type="submit" disabled={sourceInvalid}>
           {selectedOperation.action} <span aria-hidden="true">↗</span>
+          <span class="sr-only"> in a new tab</span>
         </button>
         <p class="form-help">
-          This opens a prefilled GitHub form; it does not submit the request yet. Maintainer
-          requests can produce a validated pull request, while public requests wait for approval.
+          This opens a prefilled GitHub form in a new tab; it does not submit the request yet.
+          Maintainer requests can produce a validated pull request, while public requests wait for
+          approval.
         </p>
       </form>
     </section>
@@ -998,17 +1006,12 @@ function WishlistPanel({ games }: { games: CatalogWishlistGame[] }) {
   return (
     <section class="wishlist-section" aria-labelledby="wishlist-title">
       <div class="wishlist-heading">
-        <div>
-          <span class="eyebrow">Games we’re considering</span>
-          <h1 id="wishlist-title">Wish list & requests</h1>
-          <p>
-            These games are not owned yet, so they stay out of group filters and roulette until they
-            join the shelves.
-          </p>
-        </div>
-        <a class="primary-button" href={requestUrl}>
-          Request a game <span aria-hidden="true">↗</span>
-        </a>
+        <span class="eyebrow">Games we’re considering</span>
+        <h1 id="wishlist-title">Wish list & requests</h1>
+        <p>
+          These games are not owned yet, so they stay out of group filters and roulette until they
+          join the shelves.
+        </p>
       </div>
 
       <div class="wishlist-toolbar">
@@ -1021,14 +1024,19 @@ function WishlistPanel({ games }: { games: CatalogWishlistGame[] }) {
             placeholder="Search the wish list…"
           />
         </label>
-        <label>
-          Suggest a game by name
-          <input
-            value={requestName}
-            onInput={(event) => setRequestName(event.currentTarget.value)}
-            placeholder="Optional prefill"
-          />
-        </label>
+        <div class="wishlist-request-control">
+          <label>
+            Game to suggest <span class="optional-label">(optional)</span>
+            <input
+              value={requestName}
+              onInput={(event) => setRequestName(event.currentTarget.value)}
+              placeholder="Prefill the GitHub form"
+            />
+          </label>
+          <ExternalLink class="primary-button" href={requestUrl}>
+            Open request form
+          </ExternalLink>
+        </div>
       </div>
 
       {!games.length ? (
@@ -1036,11 +1044,9 @@ function WishlistPanel({ games }: { games: CatalogWishlistGame[] }) {
           <span aria-hidden="true">◇</span>
           <h2>The wish list is ready for its first suggestion</h2>
           <p>
-            Open a public GitHub request with the game name and anything that makes it appealing.
+            Suggest one above to open a public GitHub form with the game name and anything that
+            makes it appealing.
           </p>
-          <a class="secondary-button dark" href={requestUrl}>
-            Suggest the first game
-          </a>
         </div>
       ) : !visible.length ? (
         <div class="empty-state">
@@ -1079,9 +1085,9 @@ function WishlistPanel({ games }: { games: CatalogWishlistGame[] }) {
                 <h2>{game.name}</h2>
                 {game.notes && <p>{game.notes}</p>}
                 {game.metadata.url && (
-                  <a href={game.metadata.url} target="_blank" rel="noreferrer">
-                    {game.bggId ? "View on BGG" : "View source"} <span aria-hidden="true">↗</span>
-                  </a>
+                  <ExternalLink href={game.metadata.url}>
+                    {game.bggId ? "View on BGG" : "View source"}
+                  </ExternalLink>
                 )}
               </div>
             </article>
@@ -1096,8 +1102,9 @@ export function App() {
   const setupAuthCallback = isSetupAuthCallback();
   const [payload, setPayload] = useState<CatalogPayload>();
   const [error, setError] = useState("");
-  const [view, setView] = useState<View>(() => (setupAuthCallback ? "setup" : "library"));
+  const [view, setView] = useState<AppView>(initialView);
   const [preferences, setPreferences] = useState<GroupPreferences>(initialPreferences);
+  const [shareStatus, setShareStatus] = useState<"idle" | "copied" | "failed">("idle");
   const [inspectedSlug, setInspectedSlug] = useState("");
   const inspectorTrigger = useRef<HTMLButtonElement>();
   const [drawn, setDrawnState] = useState<string[]>(() => {
@@ -1107,6 +1114,21 @@ export function App() {
       return [];
     }
   });
+
+  const navigateToView = useCallback(
+    (nextView: AppView) => {
+      if (nextView === view) return;
+      setView(nextView);
+      if (!isSetupAuthCallback()) {
+        window.history.pushState(
+          null,
+          "",
+          buildAppUrl(window.location.pathname, preferences, nextView)
+        );
+      }
+    },
+    [preferences, view]
+  );
 
   useEffect(() => {
     fetch(`${import.meta.env.BASE_URL}catalog.json`)
@@ -1121,19 +1143,43 @@ export function App() {
   useEffect(() => {
     if (payload && !payload.setupRequired && !setupAuthCallback && view === "setup") {
       setView("library");
+      window.history.replaceState(
+        null,
+        "",
+        buildAppUrl(window.location.pathname, preferences, "library")
+      );
     }
-  }, [payload, setupAuthCallback, view]);
+  }, [payload, preferences, setupAuthCallback, view]);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(preferences));
     if (isSetupAuthCallback()) return;
-    const search = serializePreferences(preferences);
-    window.history.replaceState(null, "", `${window.location.pathname}?${search}`);
-  }, [preferences]);
+    window.history.replaceState(null, "", buildAppUrl(window.location.pathname, preferences, view));
+    setShareStatus("idle");
+  }, [preferences, view]);
+
+  useEffect(() => {
+    const restoreUrlState = () => {
+      setView(parseAppView(window.location.search));
+      setPreferences(parsePreferences(window.location.search));
+    };
+    window.addEventListener("popstate", restoreUrlState);
+    return () => window.removeEventListener("popstate", restoreUrlState);
+  }, []);
 
   const setDrawn = (next: string[]) => {
     setDrawnState(next);
     localStorage.setItem(DRAWN_KEY, JSON.stringify(next));
+  };
+
+  const copyShareLink = async () => {
+    try {
+      if (!navigator.clipboard) throw new Error("Clipboard access is unavailable.");
+      await navigator.clipboard.writeText(window.location.href);
+      setShareStatus("copied");
+    } catch {
+      setShareStatus("failed");
+    }
   };
 
   const games = useMemo(() => createStandalonePlayModes(payload?.games ?? []), [payload]);
@@ -1183,16 +1229,16 @@ export function App() {
             <button
               class={view === value ? "is-active" : ""}
               aria-current={view === value ? "page" : undefined}
-              onClick={() => setView(value)}
+              onClick={() => navigateToView(value)}
               key={value}
             >
               {label}
             </button>
           ))}
         </nav>
-        <a class="github-link" href={REPOSITORY_URL}>
-          GitHub <span aria-hidden="true">↗</span>
-        </a>
+        <ExternalLink class="github-link" href={REPOSITORY_URL}>
+          GitHub
+        </ExternalLink>
       </header>
 
       <main id="main">
@@ -1272,11 +1318,14 @@ export function App() {
                           <option value="players">Player count</option>
                         </select>
                       </label>
-                      <button
-                        class="share-button"
-                        onClick={() => navigator.clipboard?.writeText(window.location.href)}
-                      >
-                        Copy link
+                      <button class="share-button" onClick={() => void copyShareLink()}>
+                        <span aria-live="polite">
+                          {shareStatus === "copied"
+                            ? "Copied!"
+                            : shareStatus === "failed"
+                              ? "Copy failed"
+                              : "Copy link"}
+                        </span>
                       </button>
                     </div>
                   </div>
@@ -1295,7 +1344,7 @@ export function App() {
                         Start with the bulk CSV template, or use Manage to prepare an individual
                         addition.
                       </p>
-                      <button class="primary-button" onClick={() => setView("maintain")}>
+                      <button class="primary-button" onClick={() => navigateToView("maintain")}>
                         Add the first game
                       </button>
                     </div>
@@ -1355,9 +1404,7 @@ export function App() {
           <p>A public, GitHub-backed inventory for finding what fits.</p>
         </div>
         <div class="footer-meta">
-          <a href="https://boardgamegeek.com" target="_blank" rel="noreferrer">
-            Powered by BGG
-          </a>
+          <ExternalLink href="https://boardgamegeek.com">Powered by BGG</ExternalLink>
           <span>
             Metadata refreshed {payload ? new Date(payload.refreshedAt).toLocaleDateString() : "—"}
           </span>

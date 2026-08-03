@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
+import { ExternalLink } from "./ExternalLink";
 import {
   EMPTY_PROGRESS,
   houseAnswersToCsv,
@@ -498,9 +499,9 @@ export function HouseEditor({
               {submission ? (
                 <>
                   <strong>Setup answers are ready for review.</strong>
-                  <a href={submission.pullRequestUrl} target="_blank" rel="noreferrer">
+                  <ExternalLink href={submission.pullRequestUrl}>
                     Open pull request #{submission.pullRequestNumber} on GitHub
-                  </a>
+                  </ExternalLink>
                 </>
               ) : (
                 <>
@@ -651,13 +652,11 @@ export function HouseEditor({
                       {currentSuggestion.mechanics.length ? (
                         <span>Mechanics: {currentSuggestion.mechanics.join(", ")}</span>
                       ) : null}
-                      <a
+                      <ExternalLink
                         href={`https://boardgamegeek.com/boardgame/${currentSuggestion.bggId}`}
-                        target="_blank"
-                        rel="noreferrer"
                       >
-                        Review this game on BGG ↗
-                      </a>
+                        Review this game on BGG
+                      </ExternalLink>
                     </details>
                   </aside>
                 ) : null}
