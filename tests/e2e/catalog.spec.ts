@@ -453,10 +453,18 @@ test("guides house answers one game at a time and keeps progress locally", async
     const accessBox = await page.locator(".setup-access-bar").boundingBox();
     const setupBox = await page.locator(".setup-shell").boundingBox();
     expect(accessBox!.width).toBeCloseTo(setupBox!.width, 0);
+    const overviewTitleBox = await page.locator(".setup-overview-title").boundingBox();
+    const overviewCopyBox = await page.locator(".setup-overview-copy").boundingBox();
+    expect(overviewCopyBox!.x).toBeGreaterThan(overviewTitleBox!.x);
+    expect(overviewCopyBox!.y).toBeLessThan(overviewTitleBox!.y + overviewTitleBox!.height);
   } else {
     await expect(setupNavigator).toBeHidden();
     await expect(page.getByLabel("Jump to a game")).toBeVisible();
   }
+  await expect(page.locator(".setup-overview-copy span")).toHaveText([
+    "Answer what you know, one game at a time.",
+    "Progress saves automatically on this device."
+  ]);
   expect(
     await page
       .locator(".setup-privacy")
