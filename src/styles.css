@@ -1893,15 +1893,17 @@ footer p {
   .setup-workspace {
     display: grid;
     grid-template-columns: minmax(230px, 270px) minmax(0, 1fr);
-    align-items: start;
+    align-items: stretch;
     gap: 1.4rem;
   }
 
   .setup-navigator {
     position: sticky;
     top: 1rem;
-    display: block;
-    max-height: min(72rem, calc(100vh - 2rem));
+    align-self: start;
+    display: flex;
+    flex-direction: column;
+    max-height: 100%;
     overflow: hidden;
     border: 1px solid var(--line);
     border-radius: 1rem;
@@ -1917,7 +1919,7 @@ footer p {
   }
 
   .setup-game-list {
-    max-height: min(66rem, calc(100vh - 8rem));
+    min-height: 0;
     overflow-y: auto;
     padding: 0.45rem;
     scrollbar-gutter: stable;
