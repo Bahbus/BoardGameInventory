@@ -600,7 +600,17 @@ test("fits a long setup game list to the questionnaire height", async ({ page })
   await page.getByRole("button", { name: "Setup", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Game 01" })).toBeVisible();
 
-  const expectAlignedBottoms = async () => {
+  const gameList = page.getByRole("navigation", { name: "Games to set up" });
+  await expect
+    .poll(() => gameList.evaluate((element) => element.scrollHeight > element.clientHeight))
+    .toBe(true);
+  const collapsedListSize = await gameList.evaluate((element) => ({
+    clientHeight: element.clientHeight,
+    scrollHeight: element.scrollHeight
+  }));
+  expect(collapsedListSize.scrollHeight).toBeGreaterThan(collapsedListSize.clientHeight);
+
+  const alignedBoxes = async () => {
     const navigatorBox = await page.locator(".setup-navigator").boundingBox();
     const questionnaireBox = await page.locator(".setup-workspace-main").boundingBox();
     expect(navigatorBox).not.toBeNull();
@@ -609,9 +619,10 @@ test("fits a long setup game list to the questionnaire height", async ({ page })
       questionnaireBox!.y + questionnaireBox!.height,
       0
     );
+    return { navigatorBox: navigatorBox!, questionnaireBox: questionnaireBox! };
   };
 
-  await expectAlignedBottoms();
+  const collapsedBoxes = await alignedBoxes();
   await page
     .getByRole("group", { name: "Mood or vibe" })
     .getByRole("button", { name: "Show all 9 mood or vibe options" })
@@ -624,7 +635,11 @@ test("fits a long setup game list to the questionnaire height", async ({ page })
     .getByRole("group", { name: "Accessibility considerations" })
     .getByRole("button", { name: "Show all 7 accessibility considerations options" })
     .click();
-  await expectAlignedBottoms();
+  const expandedBoxes = await alignedBoxes();
+  expect(expandedBoxes.questionnaireBox.height).toBeGreaterThan(
+    collapsedBoxes.questionnaireBox.height
+  );
+  expect(expandedBoxes.navigatorBox.height).toBeGreaterThan(collapsedBoxes.navigatorBox.height);
 });
 
 test("keeps setup hidden until collaborator access is verified", async ({ page }) => {

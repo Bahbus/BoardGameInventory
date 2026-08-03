@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "preact/hooks";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
 import {
   EMPTY_PROGRESS,
   houseAnswersToCsv,
@@ -297,6 +297,25 @@ export function HouseEditor({
     .sort((left, right) =>
       left.game.title.localeCompare(right.game.title, "en", { sensitivity: "base" })
     );
+  const setupNavigatorRef = useRef<globalThis.HTMLElement | null>(null);
+  const setupMainRef = useRef<globalThis.HTMLDivElement | null>(null);
+
+  useLayoutEffect(() => {
+    const navigator = setupNavigatorRef.current;
+    const main = setupMainRef.current;
+    if (!navigator || !main) return;
+
+    const matchQuestionnaireHeight = () => {
+      navigator.style.setProperty(
+        "--setup-questionnaire-height",
+        `${main.getBoundingClientRect().height}px`
+      );
+    };
+    matchQuestionnaireHeight();
+    const observer = new globalThis.ResizeObserver(matchQuestionnaireHeight);
+    observer.observe(main);
+    return () => observer.disconnect();
+  }, [current?.slug]);
 
   const update = <K extends keyof HouseAnswer>(key: K, value: HouseAnswer[K]) => {
     if (!current) return;
@@ -405,7 +424,11 @@ export function HouseEditor({
       </div>
 
       <div class="setup-workspace">
-        <aside class="setup-navigator" aria-label="Setup progress and game navigation">
+        <aside
+          class="setup-navigator"
+          aria-label="Setup progress and game navigation"
+          ref={setupNavigatorRef}
+        >
           <div class="setup-progress setup-progress-wide">
             <strong>
               {completed.size} of {games.length}
@@ -431,7 +454,7 @@ export function HouseEditor({
           </div>
         </aside>
 
-        <div class="setup-workspace-main">
+        <div class="setup-workspace-main" ref={setupMainRef}>
           <div class="setup-toolbar">
             <label>
               Jump to a game
