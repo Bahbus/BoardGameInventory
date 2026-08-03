@@ -158,14 +158,21 @@ test("keeps intermediate navigation and filters legible", async ({ page }, testI
   expect(navigationBox!.y).toBeGreaterThan(brandBox!.y);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(768);
 
-  await page.setViewportSize({ width: 430, height: 900 });
+  await page.setViewportSize({ width: 480, height: 900 });
   const compactNavigationRows = await navigation
     .getByRole("button")
     .evaluateAll((buttons) =>
       Array.from(new Set(buttons.map((button) => Math.round(button.getBoundingClientRect().top))))
     );
   expect(compactNavigationRows).toHaveLength(2);
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(430);
+  expect(
+    await navigation
+      .getByRole("button")
+      .evaluateAll((buttons) =>
+        buttons.every((button) => globalThis.getComputedStyle(button).whiteSpace === "nowrap")
+      )
+  ).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(480);
 
   await page.setViewportSize({ width: 1024, height: 900 });
   const filterColumnCount = await page
@@ -336,6 +343,7 @@ test("keeps unowned games in a searchable wish list and out of roulette", async 
   await page.getByRole("button", { name: "Wish list" }).click();
   await expect(page.getByRole("heading", { name: "Wish list & requests" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Future Game" })).toBeVisible();
+  await expect(page.locator(".wishlist-cover")).not.toContainText("Future Game");
   await expect(page.getByText("Planning to buy")).toBeVisible();
   await expect(
     page.getByRole("region", { name: "Wish list & requests" }).locator("input")
@@ -774,6 +782,42 @@ test("keeps the guided setup screen free of detectable accessibility violations"
   await expect(page.getByRole("heading", { name: "Tell us about the games" })).toBeVisible();
   const results = await new AxeBuilder({ page }).analyze();
   expect(results.violations).toEqual([]);
+});
+
+test("keeps intermediate setup guidance and actions legible", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "desktop", "Intermediate breakpoint contract");
+  await page.setViewportSize({ width: 800, height: 1024 });
+  await page.route("**/test-setup-service/api/setup/questionnaire", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        schemaVersion: 2,
+        sourceSha: setupSourceSha,
+        games: [setupGame]
+      })
+    })
+  );
+  await allowSetup(page);
+  await page.getByRole("button", { name: "Setup", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Tell us about the games" })).toBeVisible();
+
+  const titleBox = await page.locator(".setup-overview-title").boundingBox();
+  const copyBox = await page.locator(".setup-overview-copy").boundingBox();
+  const progressBox = await page.locator(".setup-progress-compact").boundingBox();
+  expect(titleBox!.x + titleBox!.width).toBeLessThan(copyBox!.x);
+  expect(progressBox!.x).toBeGreaterThanOrEqual(copyBox!.x);
+  expect(progressBox!.y).toBeGreaterThan(copyBox!.y);
+
+  const autosaveBox = await page.locator(".setup-autosave").boundingBox();
+  const downloadButton = page.getByRole("button", { name: "Download CSV copy" });
+  const downloadBox = await downloadButton.boundingBox();
+  expect(downloadBox!.y).toBeGreaterThan(autosaveBox!.y);
+  expect(
+    await downloadButton.evaluate(
+      (button) => globalThis.getComputedStyle(button).whiteSpace === "nowrap"
+    )
+  ).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(800);
 });
 
 test("fits a long setup game list to the questionnaire height", async ({ page }) => {
